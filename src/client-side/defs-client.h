@@ -113,7 +113,7 @@ void UDP_RFTP_generate_recv(char* fname){
             continue;
         }
 
-        if(recv_msg.msg_type != process_type || addr.sin_port != serv_addr.sin_port || addr.sin_addr.s_addr != serv_addr.sin_addr.s_addr){
+        if(addr.sin_port != serv_addr.sin_port || addr.sin_addr.s_addr != serv_addr.sin_addr.s_addr){
             puts("Unknown sender");
             fflush(stdout);
             continue;
