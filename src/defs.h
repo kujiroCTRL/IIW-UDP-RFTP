@@ -298,8 +298,8 @@ void UDP_RFTP_flush_pckts(void){
     for(size_t k = 0; k < win; k++){
         if(pckts[k] == NULL)
             continue;
-        // PLAUSIBLE CULPRIT
-        // fputs(buffs[k], file);
+        
+        fputs(buffs[k], file);
     }
     fflush(file);
 }
