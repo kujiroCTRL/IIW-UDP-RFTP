@@ -47,4 +47,36 @@ I client ed il server devono essere eseguiti nello spazio utente senza richieder
 
 Il server deve essere in ascolto su una porta di default (configurabile).
 
-TODO: aggiungerela parte della modalità di consegna del progetto
+### Scelta e consegna del progetto
+Il progetto può essere realizzato da un gruppo composto al massimo da 3 studenti.
+
+Per poter sostenere l'esame nell'A.A. 2022/23, è necessario prenotarsi per il progetto, comunicando al docente i nominativi ed indirizzi di e-mail dei componenti del gruppo.
+
+Per ogni comunicazione via e-mail è necessario specificare `[IW23]` nel subject della mail.
+
+Eventuali modifiche relative al gruppo devono essere tempestivamente comunicate e concordate con il docente.
+
+La consegna del progetto deve avvenire almeno dieci giorni prima della data stabilita per la discussione del progetto.
+
+La consegna del progetto consiste in:
+- un file `.zip` contenente tutti i sorgenti (opportunamente commentati) necessair per il funzionamento e la copia elettronica della relazione (in formato `.pdf`);
+- la copia cartacea della relazione.
+
+La relazione contiene:
+- la descrizione dettagliata dell'architettura del sistema e delle scelte progettuali effettuate;
+- la descrizione dell'implementazione;
+la descrizione delle eventuali limitazizoni riscontrate;
+- l'indicazione della piattaforma software usata per lo sviluppo ed il testing del sistema;
+- alcuni esempi di funzionamento;
+- valutazione delle prestazioni del protocollo al variare delle probabilità di perdita dei messaggi $p$, e della durata del timeout $T$ (incluso il caso di $T$ adattivo)
+- un manuale per l'installazione, la configurazione e l'esecuzione del sistema.
+
+### Valutazione del progetto
+I principali criteri di valutazione del progetto saranno:
+- rispondenza ai requisiti;
+- originalità;
+- efficenza;
+- leggibilità del codice;
+- modularità del codice;
+- organizzazione, chiarezza e completezza della relazione;
+- semplicità di installazione e configurazionedel software realizzato in ambiente Linux.

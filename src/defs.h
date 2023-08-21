@@ -39,14 +39,14 @@
 // La finestra di spedizione può variare
 // entro un valore minimo e massimo entrambi
 // fissi
-#define UDP_RFTP_BASE_SEND_WIN      (2)
+#define UDP_RFTP_BASE_SEND_WIN      (10)
 #define UDP_RFTP_MIN_SEND_WIN       (2)
 #define UDP_RFTP_MAX_SEND_WIN       (128)
 
 #define UDP_RFTP_SAVE_ACK           (1)
 
-#define UDP_RFTP_BASE_TIMEOUT       (8)
-#define UDP_RFTP_CONN_TIMEOUT       (3)
+#define UDP_RFTP_BASE_TOUT          (500)
+#define UDP_RFTP_CONN_TOUT          (3000000)
 #define UDP_RFTP_MAXBYE             (4)
 
 // Il timeout è gestito secondo una politica
@@ -98,7 +98,6 @@ char** pckts;
 // Variabili per la gestione degli indirizzi
 struct sockaddr_in      serv_addr;
 struct sockaddr_in      client_addr;
-
 struct sockaddr_in      addr;
 
 socklen_t               len;
@@ -110,8 +109,8 @@ struct itimerval set_timer      =
 {
     .it_interval.tv_sec         = 0,
     .it_interval.tv_usec        = 0,
-    .it_value.tv_sec            = UDP_RFTP_CONN_TIMEOUT, 
-    .it_value.tv_usec           = 0
+    .it_value.tv_sec            = 0, 
+    .it_value.tv_usec           = UDP_RFTP_CONN_TOUT
 };
 
 struct itimerval cancel_timer   =
@@ -152,6 +151,7 @@ void UDP_RFTP_exit(int signo){
 // Interrompe il cronometro per la stima del tempo
 // di andata-ritorno
 void UDP_RFTP_stop_watch(int update){
+    #ifdef UDP_RFTP_DYN_TOUT
     clock_gettime(CLOCK_REALTIME, &measured_time);
     secs        = measured_time.tv_sec - secs;
     nanosecs    = measured_time.tv_nsec - nanosecs; 
@@ -165,30 +165,28 @@ void UDP_RFTP_stop_watch(int update){
     
     set_timer.it_value.tv_usec =
         UDP_RFTP_UPDT_TOUT(
-            set_timer.it_value.tv_usec,
+            set_timer.it_value.tv_usec + set_timer.it_value.tv_sec * 1000000,
             (long) (secs * 1000000 + nanosecs / 1000)
         );
     
-    if(set_timer.it_value.tv_usec > 999999){
-        set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
-        set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
-    }
+    set_timer.it_value.tv_usec = UDP_RFTP_MIN(set_timer.it_value.tv_usec, UDP_RFTP_BASE_TOUT);
     
-    set_timer.it_value.tv_sec = UDP_RFTP_MIN(set_timer.it_value.tv_sec, UDP_RFTP_BASE_TIMEOUT);
-    if(set_timer.it_value.tv_sec == UDP_RFTP_BASE_TIMEOUT)
-        set_timer.it_value.tv_usec  = 0;
-
+    set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
+    set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
+   
     printf("New timer consists of %ld secs and %ld microsecs\n", set_timer.it_value.tv_sec, set_timer.it_value.tv_usec); 
-    
+    #endif
     return;
 }
 
 // Avvia il cronometro per la stima del tempo
 // di andata-ritorno
 void UDP_RFTP_start_watch(void){
+   #ifdef UDP_RFTP_DYN_TOUT
    clock_gettime(CLOCK_REALTIME, &measured_time); 
    secs         = measured_time.tv_sec;
    nanosecs     = measured_time.tv_nsec;
+   #endif
    
    return;
 }
@@ -247,7 +245,7 @@ void UDP_RFTP_send_pckt(void){
     if(rand() % 100 >= UDP_RFTP_LOSS_RATE)
         n = sendto(sock_fd, sendline, UDP_RFTP_MAXPCKT, 0, (struct sockaddr*) &addr, len);
     else {
-        printf("Lost packet!\n");
+        //printf("Lost packet!\n");
         fflush(stdout); 
     }
 
@@ -256,8 +254,6 @@ void UDP_RFTP_send_pckt(void){
         exit(1);
     }
     
-    printf("Sent : sequence no = %zu, data = %s\n", send_msg.progressive_id, send_msg.data);
-    fflush(stdout);
     return;
 }
 
@@ -272,31 +268,28 @@ void UDP_RFTP_recv_pckt(void){
     recv_msg.msg_type = 0; 
     int n = recvfrom(sock_fd, recvline, UDP_RFTP_MAXPCKT, 0, (struct sockaddr*) &addr, &len);
      
-    if(n == UDP_RFTP_MAXPCKT){
+    if(n == UDP_RFTP_MAXPCKT)
         UDP_RFTP_str2msg(recvline, &recv_msg);
-        printf("Received : sequence no = %zu, data = %s\n", recv_msg.progressive_id, recv_msg.data);
-        fflush(stdout);
-    }
     
     if(errno != EINTR && n < 0){
         perror("errore in recvfrom");
         exit(-1);
     }
     
+    #ifdef UDP_RFTP_DYN_TOUT 
     // Nel caso di  timeout il valore di timeout viene incrementato
     if(recv_msg.msg_type == 0){
-        set_timer.it_value.tv_usec  = UDP_RFTP_MULT_TOUT(set_timer.it_value.tv_usec);
-        set_timer.it_value.tv_sec   = UDP_RFTP_MULT_TOUT(set_timer.it_value.tv_sec);
+        set_timer.it_value.tv_usec  =
+            UDP_RFTP_MULT_TOUT(set_timer.it_value.tv_usec + 1000000 * set_timer.it_value.tv_sec);
 
-        if(set_timer.it_value.tv_usec > 999999){
-            set_timer.it_value.tv_sec   += set_timer.it_value.tv_usec / 1000000;
-            set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
-        }
-
-        set_timer.it_value.tv_sec = UDP_RFTP_MIN(set_timer.it_value.tv_sec, UDP_RFTP_BASE_TIMEOUT);
-        if(set_timer.it_value.tv_sec == UDP_RFTP_BASE_TIMEOUT)
-            set_timer.it_value.tv_usec  = 0;
-    } 
+        set_timer.it_value.tv_usec =
+            UDP_RFTP_MIN(set_timer.it_value.tv_sec, UDP_RFTP_BASE_TOUT);
+        
+        set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
+        set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
+    }
+    #endif
+    
     return;
 }
 
@@ -370,8 +363,6 @@ void UDP_RFTP_bye(void){
 void UDP_RFTP_send_ack(int signo){
     setitimer(ITIMER_REAL, &cancel_timer, NULL);
     
-    puts("Timeout occured, sending ack");
-
     char*   ack_data = calloc(1, UDP_RFTP_MAXLINE); 
     char    tmp[sizeof(size_t) + 1];
     size_t  q;
@@ -402,8 +393,8 @@ void UDP_RFTP_send_ack(int signo){
     // del tempo andata-ritorno per pacchetti
     // successivo al primo
     S = 0;
-    UDP_RFTP_start_watch();
     free(ack_data);
+    UDP_RFTP_start_watch();
 
     setitimer(ITIMER_REAL, &set_timer, NULL);
     return;
@@ -413,10 +404,8 @@ void UDP_RFTP_send_ack(int signo){
 // di tutti i pacchetti non riscontrati in `win`
 void UDP_RFTP_retrans_pckts(int signo){ 
     setitimer(ITIMER_REAL, &cancel_timer, NULL);
-    
-  //UDP_RFTP_msg tmp;
-  //memcpy(&tmp, &send_msg, sizeof(UDP_RFTP_msg)); 
-    send_msg.msg_type        = process_type;
+     
+    send_msg.msg_type = process_type;
     
     for(size_t k = 0; k < win; k++){
         if(pckts[k] == NULL)
@@ -432,7 +421,6 @@ void UDP_RFTP_retrans_pckts(int signo){
     // Avvio unico cronometro per la sequenza di pacchetti ritrasmessi
     S = 0;
     UDP_RFTP_start_watch();
-  //memcpy(&send_msg, &tmp, sizeof(UDP_RFTP_msg));
 
     setitimer(ITIMER_REAL, &set_timer, NULL);
     return;

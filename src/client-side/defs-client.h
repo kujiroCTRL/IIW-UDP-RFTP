@@ -53,11 +53,8 @@ void UDP_RFTP_generate_recv(char* fname){
         char* fname_dup = strdup(fname); 
         
         file = fopen(fname_dup, "r");
-        if(file != NULL){
-            fname_dup = strcat(fname_dup, ".dup");
-            fclose(file);
-        }
-        fname = fname_dup;
+        if(file != NULL)
+            fname = strcat(fname_dup, ".dup");
     }
     
     if((file = fopen(fname, "w+")) == NULL){
@@ -80,6 +77,12 @@ void UDP_RFTP_generate_recv(char* fname){
         perror("errore in sigaction");
         exit(-1);
     } 
+    
+    set_timer.it_value.tv_usec = UDP_RFTP_BASE_TOUT;    
+    if(set_timer.it_value.tv_usec > 999999){
+        set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
+        set_timer.it_value.tv_usec  %= 1000000;
+    }
     // Fine del setup lato client 
      
     // Avvio cronometro per la prima volta
@@ -154,10 +157,10 @@ void UDP_RFTP_generate_recv(char* fname){
             
             setitimer(ITIMER_REAL, &cancel_timer, NULL); 
             
-            printf("Received packet no %zu!\n", recv_progressive_id);
+            printf("OK\t%zu\n", recv_progressive_id);
             fflush(stdout);
             
-            UDP_RFTP_send_ack(0); /**/ 
+            // UDP_RFTP_send_ack(0); /**/ 
 
             // Viene interrotto il cronometro impostato nella precedente
             // chiamata della `send_ack` 
@@ -180,7 +183,7 @@ void UDP_RFTP_generate_recv(char* fname){
             // per la chiusura della connessione
             if((++ackd_pckts) >= pckt_count){
                 setitimer(ITIMER_REAL, &cancel_timer, NULL);
-                puts("Received all expected packets!");
+                puts("Received all packets!");
                 
                 UDP_RFTP_flush_pckts();
 
@@ -200,7 +203,7 @@ void UDP_RFTP_generate_recv(char* fname){
             if(ackd_pckts % win == 0 && ackd_pckts >= ackd_wins * win){
                 setitimer(ITIMER_REAL, &cancel_timer, NULL);
                 
-                printf("Receive window succesfully filled!\n");
+                printf("New window!\n");
                 fflush(stdout);
  
                 UDP_RFTP_flush_pckts();
@@ -245,7 +248,7 @@ void UDP_RFTP_generate_recv(char* fname){
 
             pckt_count = (size_t) strtoul(recv_msg.data, NULL, 10);
 
-            printf("Expected %lu packets!\n", pckt_count);
+            printf("Expected packets\t\t[\t%zu\t]!\n", pckt_count);
             fflush(stdout);
 
             win = UDP_RFTP_MIN(pckt_count, UDP_RFTP_MAX_RECV_WIN);
@@ -500,7 +503,7 @@ void UDP_RFTP_generate_put(char* fname){
 
             if(rel_progressive_id < (ssize_t) win && rel_progressive_id >= 0 && pckts[rel_progressive_id] != NULL){
                 setitimer(ITIMER_REAL, &cancel_timer, NULL);
-                printf("Acked packet no %zu\n", recv_progressive_id);
+                printf("OK\t%zu\n", recv_progressive_id);
                 fflush(stdout);
                  
                 pckts[rel_progressive_id] = NULL;

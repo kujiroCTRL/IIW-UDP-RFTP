@@ -90,7 +90,9 @@ void UDP_RFTP_handle_put(char* fname){
     sa.sa_flags             = 0;
     sigemptyset(&sa.sa_mask);
     
-    set_timer.it_value.tv_sec = UDP_RFTP_CONN_TIMEOUT;
+    set_timer.it_value.tv_usec = UDP_RFTP_CONN_TOUT;
+    set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
+    set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
      
     if(sigaction(SIGALRM, &sa, NULL) < 0) {
         perror("errore in sigaction");
@@ -136,11 +138,15 @@ void UDP_RFTP_handle_put(char* fname){
             sa.sa_flags             = 0;
             sigemptyset(&sa.sa_mask);
             
-            set_timer.it_value.tv_sec = UDP_RFTP_BASE_TIMEOUT;
-             
             if(sigaction(SIGALRM, &sa, NULL) < 0) {
                 perror("errore in sigaction");
                 exit(-1);
+            }
+            
+            set_timer.it_value.tv_usec = UDP_RFTP_BASE_TOUT;
+            if(set_timer.it_value.tv_usec > 999999){
+                set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
+                set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
             }
 
             K = 1;
@@ -327,7 +333,7 @@ void UDP_RFTP_handle_recv(char* fname){
     pckt_count = pckt_count / UDP_RFTP_MAXLINE + (pckt_count % UDP_RFTP_MAXLINE == 0 ? 0 : 1);
     rewind(file);
 
-    printf("Total number of packets is %zu\n", pckt_count);
+    printf("Expected packets\t\t[\t%zu\t]\n", pckt_count);
     fflush(stdout);
     
     // Ad ogni timeout corrisponderà il reinvio del primo
@@ -440,7 +446,11 @@ void UDP_RFTP_handle_recv(char* fname){
     sa.sa_flags             = 0;
     sigemptyset(&sa.sa_mask);
     
-    set_timer.it_value.tv_sec = UDP_RFTP_CONN_TIMEOUT;
+    set_timer.it_value.tv_usec = UDP_RFTP_CONN_TOUT;
+    if(set_timer.it_value.tv_usec > 999999){
+        set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
+        set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
+    }
      
     if(sigaction(SIGALRM, &sa, NULL) < 0) {
         perror("errore in sigaction");
@@ -488,7 +498,9 @@ void UDP_RFTP_handle_recv(char* fname){
             sa.sa_flags             = 0;
             sigemptyset(&sa.sa_mask);
             
-            set_timer.it_value.tv_sec = UDP_RFTP_BASE_TIMEOUT;
+            set_timer.it_value.tv_usec = UDP_RFTP_BASE_TOUT;
+            set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
+            set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
                 
             if(sigaction(SIGALRM, &sa, NULL) < 0){
                 perror("errore in sigaction");
@@ -523,7 +535,9 @@ void UDP_RFTP_handle_recv(char* fname){
             rel_progressive_id  = (ssize_t) (recv_progressive_id - ackd_wins * win - 1);
 
             if(rel_progressive_id < (ssize_t) win && rel_progressive_id >= 0 && pckts[rel_progressive_id] != NULL){
-                printf("Acked packet no %zu\n", recv_progressive_id);
+                setitimer(ITIMER_REAL, &cancel_timer, NULL);
+                
+                printf("OK\t%zu\n", recv_progressive_id);
                 fflush(stdout);
                  
                 pckts[rel_progressive_id] = NULL;
@@ -535,7 +549,6 @@ void UDP_RFTP_handle_recv(char* fname){
                 // Questo permette al server di andare in timeout solo qualora
                 // non vengano ricevuti pacchetti che nel loro campo dati
                 // riscontrino pacchetti già riscontrati
-                setitimer(ITIMER_REAL, &cancel_timer, NULL);
             }
         
             // Sono stati riscontrati tutti i segmenti del file (lista)
@@ -565,7 +578,7 @@ void UDP_RFTP_handle_recv(char* fname){
             // quindi la finestra di spedizione può essere traslata
             if(ackd_pckts % win == 0 && ackd_pckts > ackd_wins * win && ackd_pckts != 0){
                 setitimer(ITIMER_REAL, &cancel_timer, NULL);
-                printf("Send window succesfully filled!\n");
+                printf("New window!\n");
                 fflush(stdout);
                 
                 memset((void*) pckts, 0, win * sizeof(char*));

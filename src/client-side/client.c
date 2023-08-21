@@ -4,6 +4,8 @@ int main(void){
     // L'indirizzo passato per le chiamate di `sendto` e `recvfrom`
     // sarà, per il client, quello del server
     // addr = &serv_addr;
+    srand(2);
+
     chosen = 0;
 
     send_msg.data = (char*) calloc(1, UDP_RFTP_MAXLINE); 

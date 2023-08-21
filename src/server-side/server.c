@@ -3,7 +3,7 @@
 int main(void){
     char str[UDP_RFTP_MAXPCKT];
     
-    srand(time(NULL));
+    srand(2);
     
     last_win_ack.data       = (char*) malloc(UDP_RFTP_MAXLINE);
     last_win_ack.data[0]    = 0;
