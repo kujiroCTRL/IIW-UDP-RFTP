@@ -46,3 +46,5 @@ Oltre all’uso di un timeout fisso, deve essere possibile scegliere l’uso di 
 I client ed il server devono essere eseguiti nello spazio utente senza richiedere privilegi di root.
 
 Il server deve essere in ascolto su una porta di default (configurabile).
+
+TODO: aggiungerela parte della modalità di consegna del progetto

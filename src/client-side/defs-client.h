@@ -126,9 +126,16 @@ void UDP_RFTP_generate_recv(char* fname){
         if(recv_progressive_id != 0 && pckt_count != 0){ 
             rel_progressive_id = (ssize_t) (recv_progressive_id - ackd_wins * win - 1);
             
-            if(rel_progressive_id >= (ssize_t) win || pckts[rel_progressive_id] != NULL)
-                continue;
-            
+            // Nel caso in cui il pacchetto ricevuto appartenga
+            // alla finestra di ricezione precedente, inviamo un
+            // riscontro
+            // Questo in quanto i riscontri inviati dal client
+            // sono soltanto dei pacchetti della finestra corrente
+            // e, per finestre di ricezione-client e invio-server
+            // di taglie sufficientemente diverse in taglia, questo
+            // potrebbe portare ad uno stallo nella trasmissione del
+            // file
+            // Per ulteriori dettagli vedere il file `ISSUES.md` 
             if(rel_progressive_id < 0){
                 setitimer(ITIMER_REAL, &cancel_timer, NULL);
                 
@@ -141,6 +148,9 @@ void UDP_RFTP_generate_recv(char* fname){
                 setitimer(ITIMER_REAL, &set_timer, NULL);
                 continue;
             }
+
+            if(rel_progressive_id >= (ssize_t) win || pckts[rel_progressive_id] != NULL)
+                continue;
             
             setitimer(ITIMER_REAL, &cancel_timer, NULL); 
             

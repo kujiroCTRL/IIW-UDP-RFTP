@@ -480,7 +480,6 @@ void UDP_RFTP_handle_recv(char* fname){
         // finestra di spedizione
         if(K == 0){
             setitimer(ITIMER_REAL, &cancel_timer, NULL);
-            
             UDP_RFTP_stop_watch(UDP_RFTP_SET_WATCH);
     
             sock_fd = cl_sockfd[chosen];
@@ -529,10 +528,10 @@ void UDP_RFTP_handle_recv(char* fname){
                  
                 pckts[rel_progressive_id] = NULL;
                 ++ackd_pckts;
-            } else {
+                
                 // Nel caso in cui nel campo dati del pacchetto ricevuto
-                // vi sia l'indice di un pacchetto non ancora riscontrato,
-                // il timer verrà cancellato
+                // vi sia l'indice di un pacchetto non precedentemente
+                // riscontrato il timer verrà cancellato
                 // Questo permette al server di andare in timeout solo qualora
                 // non vengano ricevuti pacchetti che nel loro campo dati
                 // riscontrino pacchetti già riscontrati

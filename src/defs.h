@@ -256,8 +256,7 @@ void UDP_RFTP_send_pckt(void){
         exit(1);
     }
     
-    printf("Sent : port = %u, type = %u, sequence no = %zu, data = %.15s\n", htons(send_msg.port_no), send_msg.msg_type, send_msg.progressive_id, send_msg.data);
-    printf("to receiver %u, %u\n", addr.sin_addr.s_addr, htons(addr.sin_port));
+    printf("Sent : sequence no = %zu, data = %s\n", send_msg.progressive_id, send_msg.data);
     fflush(stdout);
     return;
 }
@@ -275,8 +274,7 @@ void UDP_RFTP_recv_pckt(void){
      
     if(n == UDP_RFTP_MAXPCKT){
         UDP_RFTP_str2msg(recvline, &recv_msg);
-        printf("Received : port = %u, type = %u, sequence no = %zu, data = %.15s\n", htons(recv_msg.port_no), recv_msg.msg_type, recv_msg.progressive_id, recv_msg.data);
-        printf("from sender\t%u, %u\n", addr.sin_addr.s_addr, htons(addr.sin_port));
+        printf("Received : sequence no = %zu, data = %s\n", recv_msg.progressive_id, recv_msg.data);
         fflush(stdout);
     }
     
@@ -296,6 +294,8 @@ void UDP_RFTP_recv_pckt(void){
         }
 
         set_timer.it_value.tv_sec = UDP_RFTP_MIN(set_timer.it_value.tv_sec, UDP_RFTP_BASE_TIMEOUT);
+        if(set_timer.it_value.tv_sec == UDP_RFTP_BASE_TIMEOUT)
+            set_timer.it_value.tv_usec  = 0;
     } 
     return;
 }
