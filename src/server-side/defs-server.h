@@ -38,7 +38,7 @@ void UDP_RFTP_handle_put(char* fname){
         
         exit(-1);
     }
-     
+
     pckt_count = (size_t) strtoul(strtok(NULL, ";"), NULL, 10);
     
     if(pckt_count == 0){
@@ -301,6 +301,7 @@ void UDP_RFTP_handle_recv(char* fname){
         process_type = UDP_RFTP_GET;
         
         fname = strtok(fname_dup, ";");
+        free(fname_dup); 
     } 
     
     // Se il file non dovesse esistere il
@@ -418,12 +419,8 @@ void UDP_RFTP_handle_recv(char* fname){
     rel_progressive_id = 0;
     
     // Carichiamo nei buffer le prime porzioni del file (lista)
-    for(size_t k = 0; k < win; k++){
-        if(k + ackd_wins * win >= pckt_count)
-            memset(buffs[k], 0, UDP_RFTP_MAXLINE);
-
-        size_t j = fread((void*) (buffs[k]), UDP_RFTP_MAXLINE, 1, file);
-        buffs[k][j * UDP_RFTP_MAXLINE] = '\0';
+    for(size_t k = 0; k < UDP_RFTP_MIN(win, pckt_count); k++){
+        fread((void*) (buffs[k]), UDP_RFTP_MAXLINE, 1, file);
         pckts[k] = buffs[k];
     }
     
@@ -570,6 +567,8 @@ void UDP_RFTP_handle_recv(char* fname){
                 else
                     puts("GET REQUEST FULFILLED!");
                 
+                free(data_dup);
+
                 UDP_RFTP_bye();
                 return;     
             }
@@ -585,13 +584,11 @@ void UDP_RFTP_handle_recv(char* fname){
                 ++ackd_wins;
                 for(size_t k = 0; k < win; k++){
                     memset(buffs[k], 0, UDP_RFTP_MAXLINE);
-                    size_t j = fread((void*) (buffs[k]), UDP_RFTP_MAXLINE, 1, file);
                      
                     if(ferror(file)){
                         perror("errore in fread");
                         exit(-1);
                     }
-                    buffs[k][UDP_RFTP_MAXLINE * j] = '\0';
 
                     pckts[k] = buffs[k];
                 }
@@ -605,8 +602,9 @@ void UDP_RFTP_handle_recv(char* fname){
             elm = strtok(NULL, ";");
             setitimer(ITIMER_REAL, &set_timer, NULL);
         }while(elm != NULL);
+        free(data_dup);
     }
-    
+ 
     if(process_type == UDP_RFTP_LIST)
         puts("LIST REQUEST FULFILLED!");
     else

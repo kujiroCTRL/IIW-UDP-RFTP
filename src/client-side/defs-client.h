@@ -55,6 +55,7 @@ void UDP_RFTP_generate_recv(char* fname){
         file = fopen(fname_dup, "r");
         if(file != NULL)
             fname = strcat(fname_dup, ".dup");
+        free(fname_dup); 
     }
     
     if((file = fopen(fname, "w+")) == NULL){
@@ -525,6 +526,8 @@ void UDP_RFTP_generate_put(char* fname){
                 send_msg.progressive_id = (size_t) -1;
                 send_msg.data           = "";
                 
+                free(data_dup);
+
                 puts("PUT PROCESS HAS SUCCESFULLY ENDED IT'S EXECUTION!");
                 UDP_RFTP_bye();
                 return;
@@ -532,6 +535,7 @@ void UDP_RFTP_generate_put(char* fname){
             
             elm = strtok(NULL, ";");
         }while(elm != NULL);
+        free(data_dup);
     }
      
     puts("PUT PROCESS HAS SUCCESFULLY ENDED IT'S EXECUTION!");

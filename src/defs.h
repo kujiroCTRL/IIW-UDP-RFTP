@@ -227,7 +227,8 @@ void UDP_RFTP_str2msg(char* str, UDP_RFTP_msg* msg){
     // Per il campo `data` non uso la `strtok` in quanto 
     // nel file (list) trasmesso potrebbero esserci caratteri
     // `,`
-    msg -> data             = strdup(str + n + 3);
+    memset(msg -> data, 0, UDP_RFTP_MAXLINE);
+    snprintf(msg -> data, UDP_RFTP_MAXLINE, "%s", str + n + 3);
     
     free(str_dup1);
     return;
@@ -237,6 +238,7 @@ void UDP_RFTP_str2msg(char* str, UDP_RFTP_msg* msg){
 // in stringa e inoltrato sulla socket in uscita
 void UDP_RFTP_send_pckt(void){
     char sendline[UDP_RFTP_MAXPCKT];
+    memset(sendline, 0, UDP_RFTP_MAXPCKT);
     UDP_RFTP_msg2str(&send_msg, sendline);
     
     len = (socklen_t) sizeof(addr); 
@@ -267,14 +269,16 @@ void UDP_RFTP_recv_pckt(void){
      
     recv_msg.msg_type = 0; 
     int n = recvfrom(sock_fd, recvline, UDP_RFTP_MAXPCKT, 0, (struct sockaddr*) &addr, &len);
-     
-    if(n == UDP_RFTP_MAXPCKT)
-        UDP_RFTP_str2msg(recvline, &recv_msg);
-    
+      
     if(errno != EINTR && n < 0){
         perror("errore in recvfrom");
         exit(-1);
     }
+    
+    if(n != UDP_RFTP_MAXPCKT)
+        return;
+     
+    UDP_RFTP_str2msg(recvline, &recv_msg);
     
     #ifdef UDP_RFTP_DYN_TOUT 
     // Nel caso di  timeout il valore di timeout viene incrementato
@@ -380,7 +384,7 @@ void UDP_RFTP_send_ack(int signo){
 
     send_msg.msg_type        = process_type;
     send_msg.progressive_id  = (size_t) -1;
-    send_msg.data            = strdup(ack_data);    
+    snprintf(send_msg.data, UDP_RFTP_MAXLINE, "%s", ack_data);
     
     // È possibile salvare nella variabile `last_win_ack`
     // l'ultimo ack inviato
@@ -413,7 +417,8 @@ void UDP_RFTP_retrans_pckts(int signo){
         
         ++retrans_count; 
         send_msg.progressive_id  = k + win * ackd_wins + 1;
-        send_msg.data            = strdup(buffs[k]);
+        
+        snprintf(send_msg.data, UDP_RFTP_MAXLINE, "%s", buffs[k]);
         
         UDP_RFTP_send_pckt();
     }
