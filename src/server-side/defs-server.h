@@ -300,7 +300,7 @@ void UDP_RFTP_handle_recv(char* fname){
         
         process_type = UDP_RFTP_GET;
         
-        fname = strtok(fname_dup, ";");
+        snprintf(fname, UDP_RFTP_MAXLINE, "%s", strtok(fname_dup, ";"));
         free(fname_dup); 
     } 
     
@@ -412,6 +412,7 @@ void UDP_RFTP_handle_recv(char* fname){
             perror("errore in malloc");
             exit(-1);
         }
+        memset(buffs[k], 0, UDP_RFTP_MAXLINE + 1);
     } 
 
     pckts = calloc(1, sizeof(char*) * win); 
@@ -471,7 +472,7 @@ void UDP_RFTP_handle_recv(char* fname){
         UDP_RFTP_recv_pckt();
         
         if(recv_msg.msg_type == 0){
-            puts("Got nothing");
+            // puts("Got nothing");
             fflush(stdout);
             continue;
         }
@@ -582,8 +583,10 @@ void UDP_RFTP_handle_recv(char* fname){
                 
                 memset((void*) pckts, 0, win * sizeof(char*));
                 ++ackd_wins;
+                
                 for(size_t k = 0; k < win; k++){
-                    memset(buffs[k], 0, UDP_RFTP_MAXLINE);
+                    memset(buffs[k], 0, UDP_RFTP_MAXLINE + 1);
+                    fread((void*) (buffs[k]), UDP_RFTP_MAXLINE, 1, file);
                      
                     if(ferror(file)){
                         perror("errore in fread");

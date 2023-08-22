@@ -46,19 +46,21 @@ void UDP_RFTP_generate_recv(char* fname){
     send_msg.data           = fname;
     
     chdir("server_files");
-    
+   
+    char fname_dup[UDP_RFTP_MAXLINE];
     if(process_type == UDP_RFTP_LIST)
-        fname = "list.txt";
+        snprintf(fname_dup, UDP_RFTP_MAXLINE, "list.txt");
     else{ 
-        char* fname_dup = strdup(fname); 
+        file = fopen(fname, "r");
         
-        file = fopen(fname_dup, "r");
-        if(file != NULL)
-            fname = strcat(fname_dup, ".dup");
-        free(fname_dup); 
+        if(file != NULL){
+            snprintf(fname_dup, UDP_RFTP_MAXLINE, "%s.dup", fname);
+            fclose(file); 
+        } else
+            snprintf(fname_dup, UDP_RFTP_MAXLINE, "%s", fname);
     }
-    
-    if((file = fopen(fname, "w+")) == NULL){
+
+    if((file = fopen(fname_dup, "w+")) == NULL){
         perror("errore in fopen");
         exit(-1);
     } 
@@ -109,7 +111,7 @@ void UDP_RFTP_generate_recv(char* fname){
         }
         
         if(recv_msg.msg_type == 0){
-            puts("Got nothing");
+            // puts("Got nothing");
             fflush(stdout);
             continue;
         }
@@ -175,7 +177,7 @@ void UDP_RFTP_generate_recv(char* fname){
                 S = 1;
             }
 
-            sprintf(buffs[rel_progressive_id], "%s", recv_msg.data);
+            snprintf(buffs[rel_progressive_id], UDP_RFTP_MAXLINE + 1, "%s", recv_msg.data);
             pckts[rel_progressive_id] = buffs[rel_progressive_id];
  
             // Sono stati riscontrati tutti i messaggi che sarebbero dovuti

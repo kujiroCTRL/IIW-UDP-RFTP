@@ -55,7 +55,7 @@
 // macro `MULT_TOUT` e `AVRG_TOUT`
 #define UDP_RFTP_MULT_TOUT(t)       (512 * (t) / 511)
 #define UDP_RFTP_AVRG_TOUT(t, T)    (1 * (t) / 2 + 1 * (T) / 2)
-#define UDP_RFTP_UPDT_TOUT(t, T)    UDP_RFTP_AVRG_TOUT(t, T) // (t < T ? UDP_RFTP_MULT_TOUT(t) : UDP_RFTP_AVRG_TOUT(t, T))
+#define UDP_RFTP_UPDT_TOUT(t, T)    (t < T ? UDP_RFTP_MULT_TOUT(t) : UDP_RFTP_AVRG_TOUT(t, T))
 
 #define UDP_RFTP_SET_WATCH          (1)
 #define UDP_RFTP_LOSS_RATE          (10)
@@ -156,7 +156,7 @@ void UDP_RFTP_stop_watch(int update){
     secs        = measured_time.tv_sec - secs;
     nanosecs    = measured_time.tv_nsec - nanosecs; 
     
-    printf("Recorded time consists of %f secs and %f nanosecs\n", secs, nanosecs); 
+    // printf("Recorded time consists of %f secs and %f nanosecs\n", secs, nanosecs); 
     if(secs < 0 || nanosecs < 0)
         return;
      
@@ -170,7 +170,7 @@ void UDP_RFTP_stop_watch(int update){
         );
     
     set_timer.it_value.tv_usec = UDP_RFTP_MIN(set_timer.it_value.tv_usec, UDP_RFTP_BASE_TOUT);
-    
+     
     set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
     set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
    
@@ -194,7 +194,7 @@ void UDP_RFTP_start_watch(void){
 // Converte la struttura messaggio `msg` nella sua forma
 // equivalente di stringa
 void UDP_RFTP_msg2str(UDP_RFTP_msg* msg, char* str){
-    sprintf(str,
+    snprintf(str, UDP_RFTP_MAXPCKT,
             "%d,%u,%zu,%s",
             msg -> port_no,
             msg -> msg_type,
@@ -228,7 +228,7 @@ void UDP_RFTP_str2msg(char* str, UDP_RFTP_msg* msg){
     // nel file (list) trasmesso potrebbero esserci caratteri
     // `,`
     memset(msg -> data, 0, UDP_RFTP_MAXLINE);
-    snprintf(msg -> data, UDP_RFTP_MAXLINE, "%s", str + n + 3);
+    snprintf(msg -> data, UDP_RFTP_MAXLINE + 1, "%s", str + n + 3);
     
     free(str_dup1);
     return;
@@ -250,7 +250,7 @@ void UDP_RFTP_send_pckt(void){
         //printf("Lost packet!\n");
         fflush(stdout); 
     }
-
+    
     if(n < 0 && errno != EINTR) {
         perror("errore in sendto");
         exit(1);
@@ -291,9 +291,11 @@ void UDP_RFTP_recv_pckt(void){
         
         set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
         set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
+        
+        printf("New timer consists of %ld secs and %ld microsecs\n", set_timer.it_value.tv_sec, set_timer.it_value.tv_usec); 
     }
     #endif
-    
+
     return;
 }
 
@@ -302,10 +304,14 @@ void UDP_RFTP_flush_pckts(void){
     for(size_t k = 0; k < win; k++){
         if(pckts[k] == NULL)
             continue;
-        
-        fputs(buffs[k], file);
+         
+        fwrite(buffs[k], strlen(buffs[k]), 1, file); 
+        // fputs(buffs[k], file);
+        // fprintf(file, "%s", buffs[k]);
     }
     fflush(file);
+    
+    return;
 }
 
 // Viene inoltrato il contenuto di `send_msg` che, nella maggior parte
@@ -390,7 +396,6 @@ void UDP_RFTP_send_ack(int signo){
     // l'ultimo ack inviato
     //if(signo == UDP_RFTP_SAVE_ACK)
     //    memcpy(&last_win_ack, &send_msg, sizeof(send_msg));
-
     UDP_RFTP_send_pckt();
     
     // Viene avviato un cronometro per la stima
@@ -417,8 +422,7 @@ void UDP_RFTP_retrans_pckts(int signo){
         
         ++retrans_count; 
         send_msg.progressive_id  = k + win * ackd_wins + 1;
-        
-        snprintf(send_msg.data, UDP_RFTP_MAXLINE, "%s", buffs[k]);
+        snprintf(send_msg.data, UDP_RFTP_MAXLINE + 1, "%s", buffs[k]);
         
         UDP_RFTP_send_pckt();
     }

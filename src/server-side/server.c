@@ -13,11 +13,11 @@ int main(void){
     // sarà, per il client, quello del server
     // addr = &client_addr;
     
-    send_msg.data       = (char*) malloc(UDP_RFTP_MAXLINE);
-    recv_msg.data       = (char*) malloc(UDP_RFTP_MAXLINE);
+    send_msg.data       = (char*) malloc(UDP_RFTP_MAXLINE + 1);
+    recv_msg.data       = (char*) malloc(UDP_RFTP_MAXLINE + 1);
     
-    send_msg.data[0]    = 0;
-    recv_msg.data[0]    = 0;
+    memset(send_msg.data, 0, UDP_RFTP_MAXLINE + 1);
+    memset(recv_msg.data, 0, UDP_RFTP_MAXLINE + 1);
 
     memset((void*) &serv_addr, 0, sizeof(serv_addr));
 
