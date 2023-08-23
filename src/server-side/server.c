@@ -55,7 +55,7 @@ int main(void){
         for(chosen = 0; chosen <= UDP_RFTP_MAXCLIENT && cl_sockfd[chosen] != 0; chosen++);
         
         if(chosen == UDP_RFTP_MAXCLIENT){
-            waitpid(WAIT_ANY, NULL, WNOHANG);
+            waitpid(0, NULL, WNOHANG | WUNTRACED);
             continue;
         }
 

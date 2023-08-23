@@ -1,4 +1,4 @@
-#include "../defs.h"
+#include "defs.h"
 
 // La `recv` gestisce entrambe le richieste di
 // `get` che `list`
@@ -45,7 +45,7 @@ void UDP_RFTP_generate_recv(char* fname){
     send_msg.progressive_id = 0;
     send_msg.data           = fname;
     
-    chdir("server_files");
+    chdir("client-side/server_files");
    
     char fname_dup[UDP_RFTP_MAXLINE];
     if(process_type == UDP_RFTP_LIST)
@@ -333,7 +333,7 @@ void UDP_RFTP_generate_put(char* fname){
 
     puts("PUT PROCESS HAS SUCCESFULLY STARTED IT'S EXECUTION!");
      
-    chdir("server_files");
+    chdir("client-side/server_files");
 
     file = fopen(fname, "r");
     if(file == NULL){

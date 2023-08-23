@@ -1,4 +1,4 @@
-#include "../defs.h"
+#include "defs.h"
 
 // La `put` gestisce richieste di put del client                                                          
 // Una tipica sequenza di indici progressivi e campo dati
@@ -24,7 +24,7 @@ void UDP_RFTP_handle_put(char* fname){
     process_type = UDP_RFTP_PUT;
     
     char* fname_dup = strtok(fname, ";");
-    chdir("server_files");
+    chdir("server-side/server_files");
      
     file = fopen(fname_dup, "r");
     if(file != NULL){
@@ -285,7 +285,7 @@ void UDP_RFTP_handle_recv(char* fname){
         return;
     
     char* fname_dup;
-    chdir("server_files"); 
+    chdir("server-side/server_files"); 
     if(fname == NULL){
         puts("SERVER HANDLING LIST REQUEST");
         system("ls > list.txt");
@@ -475,11 +475,11 @@ void UDP_RFTP_handle_recv(char* fname){
             continue;
         }
 
-        if((recv_msg.msg_type != process_type && recv_progressive_id != (size_t) -1) || addr.sin_port != client_addr.sin_port || addr.sin_addr.s_addr != client_addr.sin_addr.s_addr){
+        /* if((recv_msg.msg_type != process_type && recv_progressive_id != (size_t) -1) || addr.sin_port != client_addr.sin_port || addr.sin_addr.s_addr != client_addr.sin_addr.s_addr){
             puts("Unknown sender");
             fflush(stdout);
             continue;
-        }
+        }*/
 
         // È stato ricevuto il primo riscontro dal client, quindi d'ora in poi
         // il server potrà, a ciascun suo timeout, ritrasmettere i pacchetti della corrente

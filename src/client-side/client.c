@@ -62,12 +62,12 @@ int main(void){
             }
             
             FILE* fd;
-            chdir("server_files");
+            chdir("client_side/server_files");
             if((fd = fopen(cmd, "r")) == NULL)
                 printf("file %s non esistente\n", cmd);
             else{
                 fclose(fd);
-                chdir("..");
+                chdir("../..");
                 UDP_RFTP_generate_put(cmd);
                 ++chosen;
             }
