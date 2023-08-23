@@ -52,7 +52,7 @@ void UDP_RFTP_handle_put(char* fname){
     fflush(stdout);
 
     win = UDP_RFTP_MIN(pckt_count, UDP_RFTP_MAX_SEND_WIN);
-
+    
     buffs = (char**) malloc(sizeof(char*) * win);
     for(size_t k = 0; k < win; k++){
         if((buffs[k] = (char*) malloc(UDP_RFTP_MAXLINE + 1)) == NULL){
@@ -60,7 +60,7 @@ void UDP_RFTP_handle_put(char* fname){
             exit(-1);
         }
 
-        memset(buffs[k], 0, UDP_RFTP_MAXLINE);
+        memset(buffs[k], 0, UDP_RFTP_MAXLINE + 1);
     }
     pckts = calloc(1, sizeof(char*) * win);
     
@@ -90,7 +90,7 @@ void UDP_RFTP_handle_put(char* fname){
     sa.sa_flags             = 0;
     sigemptyset(&sa.sa_mask);
     
-    set_timer.it_value.tv_usec = UDP_RFTP_CONN_TOUT;
+    set_timer.it_value.tv_usec  = UDP_RFTP_CONN_TOUT;
     set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
     set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
      
@@ -399,7 +399,9 @@ void UDP_RFTP_handle_recv(char* fname){
     // impostiamo una finestra di spedizione pari
     // al più al valore massimo configurabile
     win = UDP_RFTP_MIN(pckt_count, UDP_RFTP_BASE_SEND_WIN);
-    snprintf(send_msg.data, UDP_RFTP_MAXLINE, "%zu", pckt_count);
+    snprintf(send_msg.data, UDP_RFTP_MAXLINE + 1, "%zu", pckt_count);
+    base_prev_win   = 0;
+    base_next_win   = win;
 
     rewind(file);
 
@@ -444,10 +446,8 @@ void UDP_RFTP_handle_recv(char* fname){
     sigemptyset(&sa.sa_mask);
     
     set_timer.it_value.tv_usec = UDP_RFTP_CONN_TOUT;
-    if(set_timer.it_value.tv_usec > 999999){
-        set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
-        set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
-    }
+    set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
+    set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
      
     if(sigaction(SIGALRM, &sa, NULL) < 0) {
         perror("errore in sigaction");
@@ -495,7 +495,7 @@ void UDP_RFTP_handle_recv(char* fname){
             sa.sa_flags             = 0;
             sigemptyset(&sa.sa_mask);
             
-            set_timer.it_value.tv_usec = UDP_RFTP_BASE_TOUT;
+            set_timer.it_value.tv_usec  = UDP_RFTP_BASE_TOUT;
             set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
             set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
                 
@@ -526,15 +526,19 @@ void UDP_RFTP_handle_recv(char* fname){
         
         // Nel campo dati dell'ultimo pacchetti è presente una lista
         // separata da `;` di indici dei pacchetti correttamente riscontrati
+        estimated_win = UDP_RFTP_MAX(acks_per_pckt, estimated_win);
+        acks_per_pckt = 0;
         do{
+            ++acks_per_pckt;
+
             recv_progressive_id = (size_t)  strtoul(elm, NULL, 10);
-            rel_progressive_id  = (ssize_t) (recv_progressive_id - ackd_wins * win - 1);
+            rel_progressive_id  = (ssize_t) (recv_progressive_id - base_prev_win - 1);
 
             if(rel_progressive_id < (ssize_t) win && rel_progressive_id >= 0 && pckts[rel_progressive_id] != NULL){
                 setitimer(ITIMER_REAL, &cancel_timer, NULL);
                 
                 printf("OK\t%zu\n", recv_progressive_id);
-                fflush(stdout);
+                // fflush(stdout);
                  
                 pckts[rel_progressive_id] = NULL;
                 ++ackd_pckts;
@@ -569,21 +573,67 @@ void UDP_RFTP_handle_recv(char* fname){
                 free(data_dup);
 
                 UDP_RFTP_bye();
-                return;     
+                return;
             }
-       
+            
             // Tutti i pacchetti nella finestra corrente sono stati riscontrati,
             // quindi la finestra di spedizione può essere traslata
-            if(ackd_pckts % win == 0 && ackd_pckts > ackd_wins * win && ackd_pckts != 0){
+            if(ackd_pckts - base_prev_win >= win && ackd_pckts != 0){
                 setitimer(ITIMER_REAL, &cancel_timer, NULL);
-                printf("New window!\n");
-                fflush(stdout);
-                
-                retrans_count = 0;
-                
+                 
                 memset((void*) pckts, 0, win * sizeof(char*));
                 ++ackd_wins;
                 
+                // La politica di aggiornamento della finestra di spedizione
+                // deve saper riconoscere la taglia della finestra di ricezione
+                // così da allineare i propri slot di trasmissione con quelli
+                // di ricezione del client
+                // Ponendo non ci siano state ritrasmissioni `win` assumerà valore
+                // `UDP_RFTP_MAX(estimated_win * 1, UDP_RFTP_MIN_SEND_WIN)`
+                // e siccome `estimated_win` è il massimo numero di pacchetti per
+                // riscontro finora ricevuto, `win` sarà esattamente la taglia
+                // della finestra di ricezione
+                // Se `retrans_count > 0` allora `win` assumerà un valore più piccolo
+                // di `estimated_win` ma comunque suo sotto-multiplo
+                size_t temp_win;
+                if(win > estimated_win)
+                    temp_win = UDP_RFTP_MAX(
+                            estimated_win / (1 + retrans_count / (win * estimated_win)),
+                            UDP_RFTP_MIN_SEND_WIN
+                    );
+                else
+                    temp_win = UDP_RFTP_MAX(
+                            estimated_win / (1 + retrans_count / estimated_win),
+                            UDP_RFTP_MIN_SEND_WIN
+                    );
+
+                temp_win = UDP_RFTP_MIN(
+                        temp_win,
+                        UDP_RFTP_MAX_SEND_WIN
+                );
+                
+                printf("Win = %zu, Acks per pckt = %zu, Retr count = %zu, Estim win = %zu, New win = %zu, Old base = %zu, New base = %zu\n", win, acks_per_pckt, retrans_count, estimated_win, temp_win, base_prev_win, base_next_win);
+                retrans_count = 0;
+                
+                base_prev_win += win;
+                base_next_win = base_prev_win + temp_win;
+
+                // La finestra di spedizione viene ampiata, quindi dobbiamo
+                // riallocare `buffs` e `pckts` così come riservare nuovo spazio
+                // per le nuove porzioni di file `buffs[k]` 
+                if(temp_win != win){
+                    win = temp_win;
+
+                    buffs = (char**) realloc((void*) buffs, sizeof(char*) * win);
+                    for(size_t k = win; k < win; k++)
+                        if((buffs[k] = (char*) malloc(UDP_RFTP_MAXLINE + 1)) == NULL){
+                            perror("errore in malloc");
+                            exit(-1);
+                        }
+                    pckts = (char**) realloc((void*) pckts, sizeof(char*) * win);
+                    memset((void*) pckts, 1, win * sizeof(char*));
+                }
+
                 for(size_t k = 0; k < win; k++){
                     memset(buffs[k], 0, UDP_RFTP_MAXLINE + 1);
                     fread((void*) (buffs[k]), UDP_RFTP_MAXLINE, 1, file);

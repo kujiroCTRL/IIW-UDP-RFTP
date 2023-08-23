@@ -104,8 +104,8 @@ void UDP_RFTP_generate_recv(char* fname){
         UDP_RFTP_recv_pckt();
         
         if(recv_msg.msg_type == 0){
-            puts("Got nothing");
-            fflush(stdout);
+            // puts("Got nothing");
+            // fflush(stdout);
             if(sa.sa_handler == &UDP_RFTP_send_pckt)
                 setitimer(ITIMER_REAL, &set_timer, NULL);
             continue;
