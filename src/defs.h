@@ -46,6 +46,7 @@
 #define UDP_RFTP_SAVE_ACK           (1)
 
 #define UDP_RFTP_BASE_TOUT          (500)
+#define UDP_RFTP_MIN_TOUT           (20)
 #define UDP_RFTP_CONN_TOUT          (3000000)
 #define UDP_RFTP_MAXBYE             (4)
 
@@ -53,14 +54,15 @@
 // multiplicative increase, averaging decrease
 // con rapporti d'incremento specificati nelle
 // macro `MULT_TOUT` e `AVRG_TOUT`
-#define UDP_RFTP_MULT_TOUT(t)       (512 * (t) / 511)
+#define UDP_RFTP_MULT_TOUT(t)       (17 * (t) / 16)
 #define UDP_RFTP_AVRG_TOUT(t, T)    (1 * (t) / 2 + 1 * (T) / 2)
 #define UDP_RFTP_UPDT_TOUT(t, T)    (t < T ? UDP_RFTP_MULT_TOUT(t) : UDP_RFTP_AVRG_TOUT(t, T))
 
 #define UDP_RFTP_SET_WATCH          (1)
-#define UDP_RFTP_LOSS_RATE          (10)
+#define UDP_RFTP_LOSS_RATE          (50)
 
 #define UDP_RFTP_MIN(x, y)          ((x) < (y) ? (x) : (y))
+#define UDP_RFTP_MAX(x, y)          ((x) > (y) ? (x) : (y))
 
 struct timespec measured_time;
 
@@ -169,8 +171,11 @@ void UDP_RFTP_stop_watch(int update){
             (long) (secs * 1000000 + nanosecs / 1000)
         );
     
-    set_timer.it_value.tv_usec = UDP_RFTP_MIN(set_timer.it_value.tv_usec, UDP_RFTP_BASE_TOUT);
-     
+    set_timer.it_value.tv_usec =
+        UDP_RFTP_MIN(set_timer.it_value.tv_usec, UDP_RFTP_BASE_TOUT);
+    set_timer.it_value.tv_usec =
+        UDP_RFTP_MAX(set_timer.it_value.tv_usec, UDP_RFTP_MIN_TOUT);
+
     set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
     set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
    
@@ -288,7 +293,9 @@ void UDP_RFTP_recv_pckt(void){
 
         set_timer.it_value.tv_usec =
             UDP_RFTP_MIN(set_timer.it_value.tv_sec, UDP_RFTP_BASE_TOUT);
-        
+        set_timer.it_value.tv_usec =
+            UDP_RFTP_MAX(set_timer.it_value.tv_usec, UDP_RFTP_MIN_TOUT);
+
         set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
         set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
         

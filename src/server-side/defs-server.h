@@ -144,10 +144,8 @@ void UDP_RFTP_handle_put(char* fname){
             }
             
             set_timer.it_value.tv_usec = UDP_RFTP_BASE_TOUT;
-            if(set_timer.it_value.tv_usec > 999999){
-                set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
-                set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
-            }
+            set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
+            set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
 
             K = 1;
         }
