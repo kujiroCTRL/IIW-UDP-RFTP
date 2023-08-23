@@ -26,7 +26,7 @@ int main(void){
     char command[UDP_RFTP_MAXLINE];
      
     while(1){
-        if(chosen >= UDP_RFTP_MAXCLIENT){
+        if(chosen == UDP_RFTP_MAXCLIENT){
             wait(NULL);
             --chosen;
         }
@@ -62,7 +62,7 @@ int main(void){
             }
             
             FILE* fd;
-            chdir("client_side/server_files");
+            chdir("client-side/server_files");
             if((fd = fopen(cmd, "r")) == NULL)
                 printf("file %s non esistente\n", cmd);
             else{

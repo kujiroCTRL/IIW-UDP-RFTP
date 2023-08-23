@@ -46,9 +46,10 @@
 #define UDP_RFTP_SAVE_ACK           (1)
 
 #define UDP_RFTP_BASE_TOUT          (500)
-#define UDP_RFTP_MIN_TOUT           (20)
+#define UDP_RFTP_MIN_TOUT           (100)
 #define UDP_RFTP_CONN_TOUT          (3000000)
 #define UDP_RFTP_MAXBYE             (4)
+#define UDP_RFTP_MAXRETRANS         (64)
 
 // Il timeout è gestito secondo una politica
 // multiplicative increase, averaging decrease
@@ -158,7 +159,6 @@ void UDP_RFTP_stop_watch(int update){
     secs        = measured_time.tv_sec - secs;
     nanosecs    = measured_time.tv_nsec - nanosecs; 
     
-    // printf("Recorded time consists of %f secs and %f nanosecs\n", secs, nanosecs); 
     if(secs < 0 || nanosecs < 0)
         return;
      
@@ -392,6 +392,14 @@ void UDP_RFTP_send_ack(int signo){
         if(pckts[k] != NULL){
             snprintf(tmp, sizeof(size_t) + 1, "%zu;", q);
             strcat(ack_data, tmp);
+            
+            // È possibile che il ricevente rimanga in attesa
+            // per una risposta dal mittente che non arriverà mai
+            if(signo == SIGALRM)
+                if((++retrans_count) >= win * UDP_RFTP_MAXRETRANS){
+                    printf("Sender may be dead\n");
+                    UDP_RFTP_exit(1);
+                }
         }
     }
 
@@ -427,7 +435,14 @@ void UDP_RFTP_retrans_pckts(int signo){
         if(pckts[k] == NULL)
             continue;
         
-        ++retrans_count; 
+        // È possibile che il mittente rimanga in attesa
+        // per una risposta dal ricevente che non arriverà mai
+        if(signo == SIGALRM)
+            if((++retrans_count) >= win * UDP_RFTP_MAXRETRANS){
+                printf("Receiver may be dead\n");
+                UDP_RFTP_exit(1);
+            }
+        
         send_msg.progressive_id  = k + win * ackd_wins + 1;
         snprintf(send_msg.data, UDP_RFTP_MAXLINE + 1, "%s", buffs[k]);
         

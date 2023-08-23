@@ -40,11 +40,6 @@ void UDP_RFTP_generate_recv(char* fname){
         process_type = UDP_RFTP_GET;
     }
     
-    // Messaggio di richiesta all connessione 
-    send_msg.msg_type       = process_type;
-    send_msg.progressive_id = 0;
-    send_msg.data           = fname;
-    
     chdir("client-side/server_files");
    
     char fname_dup[UDP_RFTP_MAXLINE];
@@ -82,17 +77,20 @@ void UDP_RFTP_generate_recv(char* fname){
     } 
     
     set_timer.it_value.tv_usec = UDP_RFTP_BASE_TOUT;    
-    if(set_timer.it_value.tv_usec > 999999){
-        set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
-        set_timer.it_value.tv_usec  %= 1000000;
-    }
+    set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
+    set_timer.it_value.tv_usec  %= 1000000;
+    
+    // Messaggio di richiesta all connessione
+    send_msg.msg_type       = process_type;
+    send_msg.progressive_id = 0;
+    send_msg.data           = fname;
     // Fine del setup lato client 
      
     // Avvio cronometro per la prima volta
     // Questo cronometro verrà disattivato nel momento
     // si riceva un primo pacchetto, quindi con indice
     // progressivo nullo o -1 
-    UDP_RFTP_send_pckt();
+    // UDP_RFTP_send_pckt();
     
     UDP_RFTP_start_watch(); 
     setitimer(ITIMER_REAL, &set_timer, NULL);
@@ -105,15 +103,17 @@ void UDP_RFTP_generate_recv(char* fname){
     while(1){
         UDP_RFTP_recv_pckt();
         
+        if(recv_msg.msg_type == 0){
+            puts("Got nothing");
+            fflush(stdout);
+            if(sa.sa_handler == &UDP_RFTP_send_pckt)
+                setitimer(ITIMER_REAL, &set_timer, NULL);
+            continue;
+        }
+        
         if(recv_msg.msg_type == UDP_RFTP_ERR){
             perror("errore nel server");
             exit(-1);
-        }
-        
-        if(recv_msg.msg_type == 0){
-            // puts("Got nothing");
-            fflush(stdout);
-            continue;
         }
 
         if(addr.sin_port != serv_addr.sin_port || addr.sin_addr.s_addr != serv_addr.sin_addr.s_addr){
@@ -394,7 +394,7 @@ void UDP_RFTP_generate_put(char* fname){
     
     buffs = (char**) malloc(sizeof(char*) * win);
     for(size_t k = 0; k < win; k++){
-        if((buffs[k] = (char*) malloc(UDP_RFTP_MAXLINE)) == NULL){
+        if((buffs[k] = (char*) malloc(UDP_RFTP_MAXLINE + 1)) == NULL){
             perror("errore in malloc");
             exit(-1);
         }
@@ -408,7 +408,7 @@ void UDP_RFTP_generate_put(char* fname){
         if(k + ackd_wins * win >= pckt_count)
             memset(buffs[k], 0, UDP_RFTP_MAXLINE);
 
-        fread(buffs[k], UDP_RFTP_MAXLINE, 1, file);
+        fread((void*) buffs[k], UDP_RFTP_MAXLINE, 1, file);
         pckts[k] = buffs[k];
     }
     
@@ -447,6 +447,8 @@ void UDP_RFTP_generate_put(char* fname){
             printf("Send window succesfully filled!\n");
             fflush(stdout);
             
+            retrans_count = 0; 
+
             memset((void*) pckts, 0, win * sizeof(char*));
             ++ackd_wins;
             for(size_t k = 0; k < win; k++){

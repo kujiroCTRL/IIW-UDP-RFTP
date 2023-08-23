@@ -318,6 +318,7 @@ void UDP_RFTP_handle_recv(char* fname){
     
     fseek(file, 0L, SEEK_END);
     pckt_count = ftell(file);
+
     // Simimente se il file dovesse essere
     // vuoto il server invierà al client
     // un messaggio con tipo `ERR` e 
@@ -519,7 +520,6 @@ void UDP_RFTP_handle_recv(char* fname){
         // Il riscontro con campo dati vuoto indica
         // la non ricezione di alcun pacchetto
         if(elm == NULL){
-            ++retrans_count;
             UDP_RFTP_retrans_pckts(0);
             continue;
         }
@@ -578,6 +578,8 @@ void UDP_RFTP_handle_recv(char* fname){
                 setitimer(ITIMER_REAL, &cancel_timer, NULL);
                 printf("New window!\n");
                 fflush(stdout);
+                
+                retrans_count = 0;
                 
                 memset((void*) pckts, 0, win * sizeof(char*));
                 ++ackd_wins;
