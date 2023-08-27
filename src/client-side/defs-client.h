@@ -104,8 +104,8 @@ void UDP_RFTP_generate_recv(char* fname){
         UDP_RFTP_recv_pckt();
         
         if(recv_msg.msg_type == 0){
-            puts("Got nothing");
-            fflush(stdout);
+            // puts("Got nothing");
+            // fflush(stdout);
             if(sa.sa_handler == &UDP_RFTP_send_pckt)
                 setitimer(ITIMER_REAL, &set_timer, NULL);
             continue;
@@ -425,8 +425,8 @@ void UDP_RFTP_generate_put(char* fname){
         UDP_RFTP_recv_pckt();
         
         if(recv_msg.msg_type == 0){
-            puts("Got nothing");
-            fflush(stdout);
+            // puts("Got nothing");
+            // fflush(stdout);
             if(sa.sa_handler == &UDP_RFTP_send_pckt)
                 setitimer(ITIMER_REAL, &set_timer, NULL);
             continue;
@@ -462,46 +462,6 @@ void UDP_RFTP_generate_put(char* fname){
 
             K = 1;
         }
-
-        // L'interruzione di questo cronometro
-        // sarà sia per quello avviato per il
-        // messaggio di richiesta e per ogni
-        // ritrasmissione successiva da parte del
-        // client
-        // A differenza della `get` dove l'interruzione
-        // avviene solo alla ricezione del primo riscontro,
-        // siccome la `retrans` avvierà il cronometro
-        // solo dopo aver ritrasmesso tutti i pacchetti
-        // possiamo semplicemente interrompere il cronometro
-        // senza doverci preoccupare di interrompere
-        // cronometri mai avviati
-        
-        // I pacchetti nella finestra di spedizione sono stati riscontrati
-        // dal server, quindi nuovi pacchetti potranno essere trasmessi
-        if(ackd_pckts % win == 0 && ackd_pckts >= ackd_wins * win && ackd_pckts != 0){
-            setitimer(ITIMER_REAL, &cancel_timer, NULL);
-            printf("Send window succesfully filled!\n");
-            fflush(stdout);
-            
-            retrans_count = 0; 
-
-            memset((void*) pckts, 0, win * sizeof(char*));
-            ++ackd_wins;
-            for(size_t k = 0; k < win; k++){
-                memset(buffs[k], 0, UDP_RFTP_MAXLINE);
-                fread((void*) (buffs[k]), UDP_RFTP_MAXLINE, 1, file);
-                
-                if(ferror(file)){
-                    perror("errore in fread");
-                    exit(-1);
-                }
-                
-                pckts[k] = buffs[k];
-            }
-            setitimer(ITIMER_REAL, &set_timer, NULL);
-            
-            continue;
-        }        
 
         char* data_dup  = strdup(recv_msg.data); 
         char* elm       = strtok(data_dup, ";");
@@ -560,6 +520,9 @@ void UDP_RFTP_generate_put(char* fname){
             
             if(ackd_pckts - base_prev_win >= win && ackd_pckts != 0){
                 setitimer(ITIMER_REAL, &cancel_timer, NULL);
+
+                printf("New window!\n");
+                fflush(stdout);
 
                 memset((void*) pckts, 0, win * sizeof(char*));
                 ++ackd_wins;
@@ -625,6 +588,7 @@ void UDP_RFTP_generate_put(char* fname){
             }
 
             elm = strtok(NULL, ";");
+            setitimer(ITIMER_REAL, &set_timer, NULL);
         } while(elm != NULL);
         free(data_dup);
     }

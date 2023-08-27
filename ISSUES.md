@@ -3,12 +3,7 @@
     
 ## Problemi implementativi
 Ad aggiornamento odierno l'applicazione presenta i seguenti problemati implementativi:
-- La `put` tende a terminare molto prima del dovuto [DA INVESTIGARE] Probabilmente il client non ritrasmette i pacchetti non riscontrati oppure il timeout potrebbe essere mal impostato
-- La politica di aggiornamento della finestra di spedizione non è adeguata (non è stabile) [FORSE RISOLTO]
-- Il codice del mittente non può gestire finestre di spedizione variabili in taglia in quanto il controllo degli indici progressivi si basava su finestre di taglia fissa. Pur modificandolo si osservano problemi di ricalcolo della finestra [FORSE RISOLTO] 
-- Il client non termina automaticamente dopo che il server è stato ucciso preentivamente [DA INVESTIGARE]
-- `list` non funzionante (`get` con pacchetti sufficentemente piccoli) [DA INVESTIGARE]
-- Il server non è in grado di gestire client successivi al primo [DA INVESTIGARE]
-- La `get` smarrisce occasionalmente porzioni di file [FORSE RISOLTO] Probabilmente perde l'ultimo pacchetto perché esso non è grande quanto `UDP_RFTP_MAXLINE`
+- Il server non è in grado di gestire client successivi al primo [DA INVESTIGARE] Potrebbe in realtà essere che la `list` tende a fallire un paio di volte se il loss rate venisse applicato in ogni scenario possibile
+- La `put` smarrisce porzioni di file ma solo quando il client non aggiorna dinamicamente il suo timeout, mentre il server sì [DA INVESTIGARE] 
+- La `get` tende a terminare sempre con la terminazione per inattività da parte del client o del server [ANCORA NON IMPLEMENTATO] Un modo semplice di risolverlo potrebbe essere introducendo un nuovo codice per l'uscita di un attore dalla comunicazione
 - Non sono presenti meccanismi di file locking per attori che agiscono sullo stesso file [ANCORA NON IMPLEMENTATO]
-- La dimensione della finestra di spedizione non viene aggiornata né per matchare quella in ricezione dell'altro attore, tantomeno in caso di congestione nella rete (o perdita di pacchetti simulata) [FORSE RISOLTO]

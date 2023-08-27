@@ -123,8 +123,8 @@ void UDP_RFTP_handle_put(char* fname){
         UDP_RFTP_recv_pckt();
 
         if(recv_msg.msg_type == 0){
-            puts("Got nothing");
-            fflush(stdout);
+            // puts("Got nothing");
+            // fflush(stdout);
             continue;
         }
         
@@ -150,13 +150,12 @@ void UDP_RFTP_handle_put(char* fname){
             sa.sa_flags             = 0;
             sigemptyset(&sa.sa_mask);
             
-            if(sigaction(SIGALRM, &sa, NULL) < 0) {
+            if(sigaction(SIGALRM, &sa, NULL) < 0){
                 perror("errore in sigaction");
                 exit(-1);
             }
             
-            puts("I WAS HERE");
-            set_timer.it_value.tv_usec = UDP_RFTP_BASE_TOUT;
+            set_timer.it_value.tv_usec  = UDP_RFTP_BASE_TOUT;
             set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
             set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
 
@@ -499,8 +498,8 @@ void UDP_RFTP_handle_recv(char* fname){
         UDP_RFTP_recv_pckt();
         
         if(recv_msg.msg_type == 0){
-            puts("Got nothing");
-            fflush(stdout);
+            // puts("Got nothing");
+            // fflush(stdout);
             continue;
         }
 
@@ -520,15 +519,15 @@ void UDP_RFTP_handle_recv(char* fname){
             sa.sa_handler           = &UDP_RFTP_retrans_pckts;
             sa.sa_flags             = 0;
             sigemptyset(&sa.sa_mask);
-            
-            set_timer.it_value.tv_usec  = UDP_RFTP_BASE_TOUT;
-            set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
-            set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
-                
+             
             if(sigaction(SIGALRM, &sa, NULL) < 0){
                 perror("errore in sigaction");
                 exit(-1);
             }
+            
+            set_timer.it_value.tv_usec  = UDP_RFTP_BASE_TOUT;
+            set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
+            set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
             
             K = 1;
         }
@@ -568,13 +567,6 @@ void UDP_RFTP_handle_recv(char* fname){
                  
                 pckts[rel_progressive_id] = NULL;
                 ++ackd_pckts;
-                
-                // Nel caso in cui nel campo dati del pacchetto ricevuto
-                // vi sia l'indice di un pacchetto non precedentemente
-                // riscontrato il timer verrà cancellato
-                // Questo permette al server di andare in timeout solo qualora
-                // non vengano ricevuti pacchetti che nel loro campo dati
-                // riscontrino pacchetti già riscontrati
             }
         
             // Sono stati riscontrati tutti i segmenti del file (lista)
@@ -607,6 +599,9 @@ void UDP_RFTP_handle_recv(char* fname){
             if(ackd_pckts - base_prev_win >= win && ackd_pckts != 0){
                 setitimer(ITIMER_REAL, &cancel_timer, NULL);
                  
+                printf("New window!\n");
+                fflush(stdout);
+                
                 memset((void*) pckts, 0, win * sizeof(char*));
                 ++ackd_wins;
                 

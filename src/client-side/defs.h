@@ -266,7 +266,6 @@ void UDP_RFTP_send_pckt(void){
         perror("errore in sendto");
         exit(1);
     }
-    printf("%s\n", sendline);
     
     return;
 }

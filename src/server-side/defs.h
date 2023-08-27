@@ -267,8 +267,6 @@ void UDP_RFTP_send_pckt(void){
         exit(1);
     }
    
-    printf("sent:%.100s\n", sendline);
-
     return;
 }
 
