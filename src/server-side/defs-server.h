@@ -25,21 +25,22 @@ void UDP_RFTP_handle_put(char* fname){
     
     char* fname_dup = strtok(fname, ";");
     chdir("server-side/server_files");
-     
+    
     file = fopen(fname_dup, "r");
     if(file != NULL){
-        fname_dup = strcat(fname_dup, ".dup");
+        snprintf(fname, UDP_RFTP_MAXLINE, "%s.dup", fname_dup);
         fclose(file);
     }
     
-    if((file = fopen(fname_dup, "w+")) == NULL){
+    if((file = fopen(fname, "w+")) == NULL){
         send_msg.msg_type = UDP_RFTP_ERR;
         UDP_RFTP_send_pckt();
         
         exit(-1);
     }
-
-    pckt_count = (size_t) strtoul(strtok(NULL, ";"), NULL, 10);
+    
+    fname_dup = strtok(NULL, ";");
+    pckt_count = (size_t) strtoul(fname_dup, NULL, 10);
     
     if(pckt_count == 0){
         send_msg.msg_type = UDP_RFTP_ERR;
@@ -48,10 +49,10 @@ void UDP_RFTP_handle_put(char* fname){
         exit(-1);
     }
 
-    printf("Expected %lu packets!\n", pckt_count);
+    printf("Expected %zu packets!\n", pckt_count);
     fflush(stdout);
 
-    win = UDP_RFTP_MIN(pckt_count, UDP_RFTP_MAX_SEND_WIN);
+    win = UDP_RFTP_MIN(pckt_count, UDP_RFTP_MAX_RECV_WIN);
     
     buffs = (char**) malloc(sizeof(char*) * win);
     for(size_t k = 0; k < win; k++){
@@ -63,7 +64,7 @@ void UDP_RFTP_handle_put(char* fname){
         memset(buffs[k], 0, UDP_RFTP_MAXLINE + 1);
     }
     pckts = calloc(1, sizeof(char*) * win);
-    
+
     memcpy(&client_addr, &addr, sizeof(addr));
 
     // Associo alla socket in ascolto con indice `chosen` il
@@ -78,7 +79,7 @@ void UDP_RFTP_handle_put(char* fname){
     send_msg.port_no        = htons(UDP_RFTP_SERV_PT + chosen + 1); 
     send_msg.msg_type       = process_type;
     send_msg.progressive_id = (size_t) -1;
-    send_msg.data[0]        = 0; 
+    memset(send_msg.data, 0, UDP_RFTP_MAXLINE + 1); 
      
     // Il primo timer serve per evitare che il client invii
     // un messaggio di richiesta senza inviarne altri dopo
@@ -104,7 +105,10 @@ void UDP_RFTP_handle_put(char* fname){
     // successivo all'invio, da parte del server,
     // del numero di porta su cui comunicare
     int K = 0; 
-    UDP_RFTP_send_pckt();
+    UDP_RFTP_send_ack(0);
+
+    sock_fd = cl_sockfd[chosen]; 
+
     setitimer(ITIMER_REAL, &set_timer, NULL);
     UDP_RFTP_start_watch();
      
@@ -117,9 +121,19 @@ void UDP_RFTP_handle_put(char* fname){
     // (selective repeat sui pacchetti della finestra)
     while(1){
         UDP_RFTP_recv_pckt();
-        if(recv_msg.msg_type != process_type || addr.sin_port != client_addr.sin_port)
+
+        if(recv_msg.msg_type == 0){
+            puts("Got nothing");
+            fflush(stdout);
             continue;
+        }
         
+        /* if((recv_msg.msg_type != process_type && recv_progressive_id != (size_t) -1) || addr.sin_port != client_addr.sin_port || addr.sin_addr.s_addr != client_addr.sin_addr.s_addr){
+            puts("Unknown sender");
+            fflush(stdout);
+            continue;
+        }*/
+
         // Quando `K = 0` la socket su cui il figlio del server
         // andrà a scivere sarà ancora la stessa aperta originariamente
         // dal padre
@@ -131,8 +145,6 @@ void UDP_RFTP_handle_put(char* fname){
         if(K == 0){
             setitimer(ITIMER_REAL, &cancel_timer, NULL);
             UDP_RFTP_stop_watch(UDP_RFTP_SET_WATCH);
-
-            sock_fd = cl_sockfd[chosen];
             
             sa.sa_handler           = &UDP_RFTP_send_ack;
             sa.sa_flags             = 0;
@@ -143,6 +155,7 @@ void UDP_RFTP_handle_put(char* fname){
                 exit(-1);
             }
             
+            puts("I WAS HERE");
             set_timer.it_value.tv_usec = UDP_RFTP_BASE_TOUT;
             set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
             set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
@@ -151,46 +164,58 @@ void UDP_RFTP_handle_put(char* fname){
         }
          
         recv_progressive_id = recv_msg.progressive_id;
-        rel_progressive_id  = (ssize_t) (recv_progressive_id - ackd_wins * win - 1);
+        rel_progressive_id  = (ssize_t) (recv_progressive_id - ackd_wins * win - 1); 
+
+        // Il messaggio ricevuto appartiene virtualmente alla finestra di ricezione
+        // precedente a quella attuale, pertanto il server invierà l'ultimo riscontro
+        // relativo la precedente finestra di ricezione
+        if(rel_progressive_id < 0){
+            setitimer(ITIMER_REAL, &cancel_timer, NULL);
+
+            send_msg.progressive_id = (size_t) -1;
+            send_msg.msg_type = process_type;
+            snprintf(send_msg.data, sizeof(size_t) + 1, "%zu;", recv_progressive_id);
+
+            UDP_RFTP_send_pckt();
+
+            setitimer(ITIMER_REAL, &set_timer, NULL);
+            continue;
+        }
         
         // Il messaggio ricevuto appartiene virtualmente alla finestra di ricezione
         // successiva a quella attuale
         if(rel_progressive_id >= (ssize_t) win || pckts[rel_progressive_id] != NULL)
             continue;
 
-        // Il messaggio ricevuto appartiene virtualmente alla finestra di ricezione
-        // precedente a quella attuale, pertanto il server invierà l'ultimo riscontro
-        // relativo la precedente finestra di ricezione
-        if(rel_progressive_id < 0){
-            memcpy(&send_msg, &last_win_ack, sizeof(send_msg));
+        // Rispetto alla precedente finestra di ricezione
+        // è stato ricevuta una nuova porzione del file
+        // In questo caso la gestione del timeout verrà
+        // affidata all'invio dei riscontri 
+        if(sa.sa_handler == &UDP_RFTP_send_pckt){ /**/
+            sa.sa_handler           = &UDP_RFTP_send_ack;
+            sa.sa_flags             = 0;
+            sigemptyset(&sa.sa_mask);
             
-            UDP_RFTP_send_pckt();
-        } else {
-            // Rispetto alla precedente finestra di ricezione
-            // è stato ricevuta una nuova porzione del file
-            // In questo caso la gestione del timeout verrà
-            // affidata all'invio dei riscontri 
-            if(sa.sa_handler == &UDP_RFTP_send_pckt){ /**/
-                sa.sa_handler           = &UDP_RFTP_send_ack;
-                sa.sa_flags             = 0;
-                sigemptyset(&sa.sa_mask);
-                
-                if(sigaction(SIGALRM, &sa, NULL) < 0) {
-                    perror("errore in sigaction");
-                    exit(-1);
-                }
+            if(sigaction(SIGALRM, &sa, NULL) < 0) {
+                perror("errore in sigaction");
+                exit(-1);
             }
         }
-
+        
         // Interrompo il cronometro avviato all'ultimo riscontro
         // inviato
-        UDP_RFTP_stop_watch(UDP_RFTP_SET_WATCH);
-         
-        sprintf(buffs[rel_progressive_id], "%s", recv_msg.data);
-        pckts[rel_progressive_id] = buffs[rel_progressive_id];
- 
-        printf("Received packet no %zu!\n", recv_progressive_id);
+        setitimer(ITIMER_REAL, &cancel_timer, NULL);
+
+        printf("OK\t%zu\n", recv_progressive_id);
         fflush(stdout);
+
+        if(S == 0){
+            UDP_RFTP_stop_watch(UDP_RFTP_SET_WATCH);
+            S = 1;
+        }
+
+        snprintf(buffs[rel_progressive_id], UDP_RFTP_MAXLINE + 1, "%s", recv_msg.data);
+        pckts[rel_progressive_id] = buffs[rel_progressive_id];
  
         // Avendo riscontrato un numero di pacchetti maggiore
         // o uguale al totale numero di pacchetti del file,
@@ -199,20 +224,19 @@ void UDP_RFTP_handle_put(char* fname){
         // con indice progressivo pari a -1
         if((++ackd_pckts) >= pckt_count){
             setitimer(ITIMER_REAL, &cancel_timer, NULL);
-
-            puts("Received all expected packets!");
+            puts("Received all packets!");
             
             UDP_RFTP_flush_pckts();
 
             memset((void*) pckts, 1, win * sizeof(char*));
             UDP_RFTP_send_ack(0);
             
+            puts("Closing connection");
             send_msg.msg_type       = process_type;
             send_msg.progressive_id = (size_t) -1;
-            send_msg.data[0]         = 0;
+            memset(send_msg.data, 0, UDP_RFTP_MAXLINE + 1);
              
             UDP_RFTP_bye(); 
-            UDP_RFTP_exit(0);
             return;
         }
         
@@ -220,21 +244,24 @@ void UDP_RFTP_handle_put(char* fname){
         // spostarla e accettare i rimanenti pacchetti dal client
         if(ackd_pckts % win == 0 && ackd_pckts >= ackd_wins * win){
             setitimer(ITIMER_REAL, &cancel_timer, NULL);
-            puts("Receive window succesfully filled!");
                 
-            retrans_count = 0;
+            printf("New window!\n");
+            fflush(stdout);
 
             UDP_RFTP_flush_pckts();
-            UDP_RFTP_send_ack(UDP_RFTP_SAVE_ACK);
+            UDP_RFTP_send_ack(0);
  
+            retrans_count = 0;
+            
             memset((void*) pckts, 0, win * sizeof(char*));
             ++ackd_wins;
             
+            /* FORSE RIMUOVIBILE 
             // Finché il server non riceverà un nuovo pacchetto
             // l'invio del riscontro sarà affidato alla `send_last_pckt`
             // che reinvierà l'ultimo riscontro inviato e relativo
             // alla precedente finestra di ricezione 
-            sa.sa_handler           = &UDP_RFTP_send_pckt; /**/
+            sa.sa_handler           = &UDP_RFTP_send_pckt;
             sa.sa_flags             = 0;
             sigemptyset(&sa.sa_mask);
             
@@ -242,9 +269,10 @@ void UDP_RFTP_handle_put(char* fname){
                 perror("errore in sigaction");
                 exit(-1);
             }
-   
-            setitimer(ITIMER_REAL, &set_timer, NULL);
+            */
         }
+        
+        setitimer(ITIMER_REAL, &set_timer, NULL);
     }
 
     puts("PUT REQUEST FULFILLED!");
@@ -471,7 +499,7 @@ void UDP_RFTP_handle_recv(char* fname){
         UDP_RFTP_recv_pckt();
         
         if(recv_msg.msg_type == 0){
-            // puts("Got nothing");
+            puts("Got nothing");
             fflush(stdout);
             continue;
         }
@@ -489,8 +517,6 @@ void UDP_RFTP_handle_recv(char* fname){
             setitimer(ITIMER_REAL, &cancel_timer, NULL);
             UDP_RFTP_stop_watch(UDP_RFTP_SET_WATCH);
     
-            sock_fd = cl_sockfd[chosen];
-        
             sa.sa_handler           = &UDP_RFTP_retrans_pckts;
             sa.sa_flags             = 0;
             sigemptyset(&sa.sa_mask);
@@ -538,7 +564,7 @@ void UDP_RFTP_handle_recv(char* fname){
                 setitimer(ITIMER_REAL, &cancel_timer, NULL);
                 
                 printf("OK\t%zu\n", recv_progressive_id);
-                // fflush(stdout);
+                fflush(stdout);
                  
                 pckts[rel_progressive_id] = NULL;
                 ++ackd_pckts;
@@ -563,7 +589,7 @@ void UDP_RFTP_handle_recv(char* fname){
                 
                 send_msg.msg_type       = process_type;
                 send_msg.progressive_id = (size_t) -1;
-                send_msg.data[0]        = 0;
+                send_msg.data           = "";
                 
                 if(process_type == UDP_RFTP_LIST)
                     puts("LIST REQUEST FULFILLED!");
@@ -612,27 +638,30 @@ void UDP_RFTP_handle_recv(char* fname){
                         UDP_RFTP_MAX_SEND_WIN
                 );
                 
-                printf("Win = %zu, Acks per pckt = %zu, Retr count = %zu, Estim win = %zu, New win = %zu, Old base = %zu, New base = %zu\n", win, acks_per_pckt, retrans_count, estimated_win, temp_win, base_prev_win, base_next_win);
                 retrans_count = 0;
                 
                 base_prev_win += win;
                 base_next_win = base_prev_win + temp_win;
 
+                if(temp_win != win){
+                    buffs = (char**) realloc((void*) buffs, sizeof(char*) * temp_win);
+                    
+                    pckts = (char**) realloc((void*) pckts, sizeof(char*) * temp_win);
+                    memset((void*) pckts, 1, temp_win * sizeof(char*));    
+                }
+
                 // La finestra di spedizione viene ampiata, quindi dobbiamo
                 // riallocare `buffs` e `pckts` così come riservare nuovo spazio
                 // per le nuove porzioni di file `buffs[k]` 
-                if(temp_win != win){
-                    win = temp_win;
-
-                    buffs = (char**) realloc((void*) buffs, sizeof(char*) * win);
-                    for(size_t k = win; k < win; k++)
+                if(temp_win > win){
+                    for(size_t k = win; k < temp_win; k++)
                         if((buffs[k] = (char*) malloc(UDP_RFTP_MAXLINE + 1)) == NULL){
                             perror("errore in malloc");
                             exit(-1);
                         }
-                    pckts = (char**) realloc((void*) pckts, sizeof(char*) * win);
-                    memset((void*) pckts, 1, win * sizeof(char*));
                 }
+                
+                win = temp_win;
 
                 for(size_t k = 0; k < win; k++){
                     memset(buffs[k], 0, UDP_RFTP_MAXLINE + 1);

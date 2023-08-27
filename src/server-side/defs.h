@@ -89,7 +89,7 @@ size_t  pckt_count          = 0,
         base_prev_win       = 0,
         recv_progressive_id = 0,
         retrans_count       = 0,
-        acks_per_pckt      = 0;
+        acks_per_pckt       = 0;
 
 ssize_t rel_progressive_id = -1;
 
@@ -266,7 +266,9 @@ void UDP_RFTP_send_pckt(void){
         perror("errore in sendto");
         exit(1);
     }
-    
+   
+    printf("sent:%.100s\n", sendline);
+
     return;
 }
 
@@ -448,9 +450,9 @@ void UDP_RFTP_retrans_pckts(int signo){
                 printf("Receiver may be dead\n");
                 UDP_RFTP_exit(1);
             }
-
+        
         send_msg.progressive_id  = k + base_prev_win + 1; // k + win * ackd_wins + 1;
-        printf("Retrans'ed %zu\n", send_msg.progressive_id);
+        // printf("Retrans'ed %zu\n", send_msg.progressive_id);
         snprintf(send_msg.data, UDP_RFTP_MAXLINE + 1, "%s", buffs[k]);
         
         UDP_RFTP_send_pckt();
