@@ -23,14 +23,16 @@ void UDP_RFTP_handle_put(char* fname){
     puts("SERVER HANDLING PUT REQUEST!");
     process_type = UDP_RFTP_PUT;
     
-    char* fname_dup = strtok(fname, ";");
+    char* fname_dup = strdup(fname);
+    fname_dup       = strtok(fname_dup, ";");
     chdir("server-side/server_files");
     
     file = fopen(fname_dup, "r");
     if(file != NULL){
         snprintf(fname, UDP_RFTP_MAXLINE, "%s.dup", fname_dup);
         fclose(file);
-    }
+    } else 
+        snprintf(fname, UDP_RFTP_MAXLINE, "%s", fname_dup);
     
     if((file = fopen(fname, "w+")) == NULL){
         send_msg.msg_type = UDP_RFTP_ERR;
