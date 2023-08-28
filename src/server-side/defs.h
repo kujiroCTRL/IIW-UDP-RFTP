@@ -59,7 +59,7 @@
 #define UDP_RFTP_UPDT_TOUT(t, T)    (t < T ? UDP_RFTP_MULT_TOUT(t) : UDP_RFTP_AVRG_TOUT(t, T))
 
 #define UDP_RFTP_SET_WATCH          (1)
-#define UDP_RFTP_LOSS_RATE          (50)
+#define UDP_RFTP_LOSS_RATE          (0)
 
 #define UDP_RFTP_MIN(x, y)          ((x) < (y) ? (x) : (y))
 #define UDP_RFTP_MAX(x, y)          ((x) > (y) ? (x) : (y))
@@ -257,8 +257,7 @@ void UDP_RFTP_send_pckt(int signo){
     len = (socklen_t) sizeof(addr); 
     
     int n = 0;
-    srand(time(NULL));
-    if(rand() / (RAND_MAX / 100) >= UDP_RFTP_LOSS_RATE)
+    if(rand() % 100 >= UDP_RFTP_LOSS_RATE)
         n = sendto(sock_fd, sendline, UDP_RFTP_MAXPCKT, 0, (struct sockaddr*) &addr, len);
     else {
         printf("Lost packet!\n");
@@ -269,6 +268,7 @@ void UDP_RFTP_send_pckt(int signo){
         perror("errore in sendto");
         exit(1);
     }
+    printf("SENT\t%.100s\n", sendline);
     
     return;
 }
@@ -293,6 +293,7 @@ void UDP_RFTP_recv_pckt(void){
         return;
      
     UDP_RFTP_str2msg(recvline, &recv_msg);
+    printf("RECV\t%.100s\n", recvline);
     
     #ifdef UDP_RFTP_DYN_TOUT 
     // Nel caso di  timeout il valore di timeout viene incrementato

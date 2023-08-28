@@ -6,7 +6,7 @@ SERVERDIR = ./server-side
 
 DFLAGS = -DUDP_RFTP_DYN_TOUT
 
-all : ./client ./server
+all : ./client ./server ./clientd ./serverd
 
 ./client : $(CLIENTDIR)/client.c $(CLIENTDIR)/defs-client.h $(CLIENTDIR)/defs.h
 	$(CC) $< $(CFLAGS) -o $@
@@ -15,7 +15,7 @@ all : ./client ./server
 	$(CC) $< $(CFLAGS) -o $@
 
 ./clientd : $(CLIENTDIR)/client.c $(CLIENTDIR)/defs-client.h $(CLIENTDIR)/defs.h
-	$(CC) $< $(CFLAGS) $(DLAGS) -o $@
+	$(CC) $< $(CFLAGS) $(DFLAGS) -o $@
 
 ./serverd : $(SERVERDIR)/server.c $(SERVERDIR)/defs-server.h $(SERVERDIR)/defs.h
 	$(CC) $< $(CFLAGS) $(DFLAGS) -o $@

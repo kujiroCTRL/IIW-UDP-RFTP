@@ -20,6 +20,8 @@ void UDP_RFTP_handle_put(char* fname){
     if(pid != 0)
         return;
     
+    srand(time(NULL));
+
     puts("SERVER HANDLING PUT REQUEST!");
     process_type = UDP_RFTP_PUT;
     
@@ -313,6 +315,8 @@ void UDP_RFTP_handle_recv(char* fname){
     if(pid != 0)
         return;
     
+    srand(time(NULL));
+
     char* fname_dup;
     chdir("server-side/server_files"); 
     if(fname == NULL){

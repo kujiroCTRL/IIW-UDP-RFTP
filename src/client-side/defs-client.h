@@ -32,6 +32,8 @@ void UDP_RFTP_generate_recv(char* fname){
     if(pid != 0)
         return;
     
+    srand(time(NULL));
+
     if(fname == NULL){
         puts("LIST PROCESS HAS SUCCESFULLY STARTED IT'S EXECUTION!");
         process_type = UDP_RFTP_LIST; 
@@ -328,6 +330,8 @@ void UDP_RFTP_generate_put(char* fname){
     
     if(pid != 0)
         return;
+
+    srand(time(NULL));
 
     puts("PUT PROCESS HAS SUCCESFULLY STARTED IT'S EXECUTION!");
      
