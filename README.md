@@ -36,6 +36,17 @@ All'interno di una stesso spazio di lavoro è possibile generare ed eseguire amb
 	- `get <nome>` per ottenere dalla cartella del server il file `<nome>`
 	- `put <nome>` per caricare nella cartella del server il file `<nome>`
 
+Nello specifico `list` genererà un file `list.txt` nella cartella [`./src/client-side/server_files`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/client-side/server_files)
+
 I file (o la lista dei file) richiesti dal client verranno salvati in [`./src/client-side/server_files`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/client-side/server_files) mentre i file caricati dal client tramite `put` dovranno essere salvati in [`./src/client-side/server_files`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/client-side/server_files)  prima dell'esecuzione del comando
 
-Questo significa che per il client tutti i file, caricati o scaricati, dovranno risiedere nella cartella [`./src/client-side/server_files`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/client-side/server_files)
+Questo significa che per il client tutti i file, caricati o scaricati, risiederanno nella cartella [`./src/client-side/server_files`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/client-side/server_files)
+
+Un simile ragionamento è valido per il server: qualora venisse eseguita una versione del server
+- tutti gli aggiornamenti dei suoi file dovuti da richieste `put` di un client saranno visibili nella cartella [`./src/server-side/server_files`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/server-side/server_files)
+- tutte le richieste di tipo `get` effettuate da un client dovranno essere precedute dal caricamento in [`./src/server-side/server_files`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/server-side/server_files) dei file custoditi dal server
+- nel caso di richieste `list` in [`./src/server-side/server_files`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/server-side/server_files) verrà creato un file `list.txt` contenente la lista dei file correntemente posseduti dal server
+
+5. Per terminare l'applicazione premere `<Ctrl>+C`
+
+La versione attuale del sistema non prevede la visualizzazione a schermo dei file scambiati: terminata l'applicazione dovrà essere l'utente ad aprire e visionare il contenuto dei file in questione 
