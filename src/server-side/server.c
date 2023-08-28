@@ -3,10 +3,8 @@
 int main(void){
     char str[UDP_RFTP_MAXPCKT];
     
-    srand(2);
+    srand(time(NULL));
     
-    last_win_ack.data       = (char*) malloc(UDP_RFTP_MAXLINE);
-    last_win_ack.data[0]    = 0;
     chosen                  = 0;
 
     // L'indirizzo passato per le chiamate di `sendto` e `recvfrom`
@@ -53,6 +51,7 @@ int main(void){
         puts(str);
         
         for(chosen = 0; chosen <= UDP_RFTP_MAXCLIENT && cl_sockfd[chosen] != 0; chosen++);
+
         if(chosen == UDP_RFTP_MAXCLIENT)
             wait(NULL);
 

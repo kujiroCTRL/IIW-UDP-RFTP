@@ -21,4 +21,4 @@ all : ./client ./server
 	$(CC) $< $(CFLAGS) $(DFLAGS) -o $@
 
 clean :
-	rm -rf client server
+	rm -rf ./client ./server ./clientd ./serverd

@@ -36,7 +36,7 @@ void UDP_RFTP_handle_put(char* fname){
     
     if((file = fopen(fname, "w+")) == NULL){
         send_msg.msg_type = UDP_RFTP_ERR;
-        UDP_RFTP_send_pckt();
+        UDP_RFTP_send_pckt(0);
         
         exit(-1);
     }
@@ -46,7 +46,7 @@ void UDP_RFTP_handle_put(char* fname){
     
     if(pckt_count == 0){
         send_msg.msg_type = UDP_RFTP_ERR;
-        UDP_RFTP_send_pckt();
+        UDP_RFTP_send_pckt(0);
 
         exit(-1);
     }
@@ -177,7 +177,7 @@ void UDP_RFTP_handle_put(char* fname){
             send_msg.msg_type = process_type;
             snprintf(send_msg.data, sizeof(size_t) + 1, "%zu;", recv_progressive_id);
 
-            UDP_RFTP_send_pckt();
+            UDP_RFTP_send_pckt(0);
 
             setitimer(ITIMER_REAL, &set_timer, NULL);
             continue;
@@ -192,7 +192,7 @@ void UDP_RFTP_handle_put(char* fname){
         // è stato ricevuta una nuova porzione del file
         // In questo caso la gestione del timeout verrà
         // affidata all'invio dei riscontri 
-        if(sa.sa_handler == &UDP_RFTP_send_pckt){ /**/
+        if(sa.sa_handler == &UDP_RFTP_send_pckt){
             sa.sa_handler           = &UDP_RFTP_send_ack;
             sa.sa_flags             = 0;
             sigemptyset(&sa.sa_mask);
@@ -337,7 +337,7 @@ void UDP_RFTP_handle_recv(char* fname){
     file = fopen(fname, "r");
     if(file == NULL){
         send_msg.msg_type = UDP_RFTP_ERR;
-        UDP_RFTP_send_pckt();
+        UDP_RFTP_send_pckt(0);
 
         exit(-1);
     }
@@ -354,7 +354,7 @@ void UDP_RFTP_handle_recv(char* fname){
     // terminerà
     if(pckt_count == 0){
         send_msg.msg_type = UDP_RFTP_ERR;
-        UDP_RFTP_send_pckt();
+        UDP_RFTP_send_pckt(0);
 
         exit(-1);
     }
@@ -362,14 +362,14 @@ void UDP_RFTP_handle_recv(char* fname){
     pckt_count = pckt_count / UDP_RFTP_MAXLINE + (pckt_count % UDP_RFTP_MAXLINE == 0 ? 0 : 1);
     rewind(file);
 
-    printf("Expected packets\t\t[\t%zu\t]\n", pckt_count);
+    printf("Expected %zu packets!\n", pckt_count);
     fflush(stdout);
     
     // Ad ogni timeout corrisponderà il reinvio del primo
     // messaggio verso il client, quindi il messaggio
     // che nel campo dati contiene il numero di pacchetti
     // che costituisce il file richiesto
-    sa.sa_handler           = &UDP_RFTP_send_pckt; /**/
+    sa.sa_handler           = &UDP_RFTP_send_pckt;
     sa.sa_flags             = 0;
     sigemptyset(&sa.sa_mask);
     
@@ -405,11 +405,11 @@ void UDP_RFTP_handle_recv(char* fname){
         if(ferror(file)){
             perror("errore in fread");
             send_msg.msg_type = UDP_RFTP_ERR;
-            UDP_RFTP_send_pckt();
+            UDP_RFTP_send_pckt(0);
             exit(-1);
         }
          
-        UDP_RFTP_send_pckt();
+        UDP_RFTP_send_pckt(0);
         
         sock_fd = cl_sockfd[chosen];
         
@@ -490,7 +490,7 @@ void UDP_RFTP_handle_recv(char* fname){
     // Solo dopo aver inviato questo pacchetto il server
     // cambierà la propria socket di scrittura con quella
     // appena creata
-    UDP_RFTP_send_pckt();
+    UDP_RFTP_send_pckt(0);
     
     sock_fd = cl_sockfd[chosen];
     setitimer(ITIMER_REAL, &set_timer, NULL);

@@ -67,8 +67,8 @@ void UDP_RFTP_generate_recv(char* fname){
     
     // In attesa della risposta alla richiesta, al timeout
     // corrisponderà un inoltro della richiesta di connessione
-    sa.sa_handler           = &UDP_RFTP_send_pckt; /**/
-    sa.sa_flags             = 0;
+    sa.sa_handler       = &UDP_RFTP_send_pckt; /**/
+    sa.sa_flags         = 0;
     sigemptyset(&sa.sa_mask);
     
     if(sigaction(SIGALRM, &sa, NULL) < 0) {
@@ -90,7 +90,7 @@ void UDP_RFTP_generate_recv(char* fname){
     // Questo cronometro verrà disattivato nel momento
     // si riceva un primo pacchetto, quindi con indice
     // progressivo nullo o -1 
-    // UDP_RFTP_send_pckt();
+    UDP_RFTP_send_pckt(0);
     
     UDP_RFTP_start_watch(); 
     setitimer(ITIMER_REAL, &set_timer, NULL);
@@ -116,7 +116,7 @@ void UDP_RFTP_generate_recv(char* fname){
             exit(-1);
         }
 
-        if(addr.sin_port != serv_addr.sin_port || addr.sin_addr.s_addr != serv_addr.sin_addr.s_addr){
+        if(addr.sin_port != serv_addr.sin_port){ // || addr.sin_addr.s_addr != serv_addr.sin_addr.s_addr){
             puts("Unknown sender");
             fflush(stdout);
             continue;
@@ -149,7 +149,7 @@ void UDP_RFTP_generate_recv(char* fname){
                 send_msg.msg_type       = process_type;
                 snprintf(send_msg.data, sizeof(size_t) + 1, "%zu;", recv_progressive_id);
                 
-                UDP_RFTP_send_pckt();
+                UDP_RFTP_send_pckt(0);
 
                 setitimer(ITIMER_REAL, &set_timer, NULL);
                 continue;
@@ -163,8 +163,6 @@ void UDP_RFTP_generate_recv(char* fname){
             printf("OK\t%zu\n", recv_progressive_id);
             fflush(stdout);
             
-            // UDP_RFTP_send_ack(0); /**/ 
-
             // Viene interrotto il cronometro impostato nella precedente
             // chiamata della `send_ack` 
             // Il controllo su `S` è dovuto dal fatto che il cronometro 
@@ -345,22 +343,10 @@ void UDP_RFTP_generate_put(char* fname){
         perror("errore in socket");
         exit(-1);
     }
-   
-    /* FORSE RIMUOVIBILE 
-    memset((void*) &serv_addr, 0, sizeof(serv_addr));
-    memset((void*) &addr, 0, sizeof(addr));
-    addr.sin_family         = serv_addr.sin_family        = AF_INET;
-    addr.sin_port           = serv_addr.sin_port          = htons(UDP_RFTP_SERV_PT);
-    addr.sin_addr.s_addr    = serv_addr.sin_addr.s_addr   = htonl(INADDR_ANY);
-    if(inet_pton(AF_INET, UDP_RFTP_SERV_IP, &serv_addr.sin_addr) <= 0) {
-		perror("errore in inet_pton");
-	    exit(-1);
-    }
-    */
     
-    sa.sa_handler       = &UDP_RFTP_send_pckt; /**/
+    sa.sa_handler       = &UDP_RFTP_send_pckt;
     sa.sa_flags         = 0;
-    sigemptyset(&sa.sa_mask);;
+    sigemptyset(&sa.sa_mask);
 
     if(sigaction(SIGALRM, &sa, NULL) < 0) {
         perror("errore in sigaction");
@@ -382,7 +368,7 @@ void UDP_RFTP_generate_put(char* fname){
     pckt_count = ftell(file); 
     pckt_count = pckt_count / UDP_RFTP_MAXLINE + (pckt_count % UDP_RFTP_MAXLINE == 0 ? 0 : 1);
     
-    printf("Total number of packets is %zu\n", pckt_count);
+    printf("Expected %zu packets\n", pckt_count);
     fflush(stdout);
     
     win = UDP_RFTP_MIN(pckt_count, UDP_RFTP_BASE_SEND_WIN);
@@ -411,15 +397,14 @@ void UDP_RFTP_generate_put(char* fname){
         fread((void*) buffs[k], UDP_RFTP_MAXLINE, 1, file);
         pckts[k] = buffs[k];
     }
-    /* FORSE PUÒ ESSERE RIMOSSO
+
     // Come per la `recv` impostiamo il cronometro
     // per la stima del tempo di andata-ritorno
     UDP_RFTP_start_watch();
-    */
 
     int K = 0;
 
-    UDP_RFTP_send_pckt();
+    UDP_RFTP_send_pckt(0);
 
     while(1){
         UDP_RFTP_recv_pckt();
@@ -437,7 +422,7 @@ void UDP_RFTP_generate_put(char* fname){
             exit(-1);
         }
         
-        if(addr.sin_port != serv_addr.sin_port || addr.sin_addr.s_addr != serv_addr.sin_addr.s_addr){
+        if(addr.sin_port != serv_addr.sin_port){ // || addr.sin_addr.s_addr != serv_addr.sin_addr.s_addr){
             puts("Unknown server");
             fflush(stdout);
             continue;
@@ -477,9 +462,9 @@ void UDP_RFTP_generate_put(char* fname){
         // Ciascun elemento seguito da `;` corrisponderà all'indice
         // di un pacchetto che è stato ricevuto, quindi riscontrato
         // dal server
-        estimated_win = UDP_RFTP_MAX(acks_per_pckt, estimated_win);
         acks_per_pckt = 0;
         do{
+            estimated_win = UDP_RFTP_MAX(acks_per_pckt, estimated_win);
             ++acks_per_pckt;
 
             recv_progressive_id = (size_t)  strtoul(elm, NULL, 10);
@@ -565,7 +550,7 @@ void UDP_RFTP_generate_put(char* fname){
                             perror("errore in malloc");
                             exit(-1);
                         }
-                }                                                                  
+                }
 
                 win = temp_win;
 
@@ -582,7 +567,6 @@ void UDP_RFTP_generate_put(char* fname){
                 }
 
                 UDP_RFTP_retrans_pckts(0);
-                S = 0;
 
                 break;
             }

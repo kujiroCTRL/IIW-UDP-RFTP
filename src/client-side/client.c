@@ -4,7 +4,7 @@ int main(void){
     // L'indirizzo passato per le chiamate di `sendto` e `recvfrom`
     // sarà, per il client, quello del server
     // addr = &serv_addr;
-    srand(2);
+    srand(time(NULL));
 
     chosen = 0;
 
