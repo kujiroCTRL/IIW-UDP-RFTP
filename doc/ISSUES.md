@@ -1,4 +1,5 @@
 # Problemi della soluzione proposta
+di Lorenzo Casavecchia **< <lnzcsv@gmail.com> >**
 ## Problemi implementativi
 Ad aggiornamento odierno l'applicazione presenta i seguenti problemati implementativi:
 - Gli attori in ricezione non inviano riscontri per l'ultima finestra di ricezione
