@@ -557,10 +557,10 @@ void UDP_RFTP_handle_recv(char* fname){
         
         // Nel campo dati dell'ultimo pacchetti è presente una lista
         // separata da `;` di indici dei pacchetti correttamente riscontrati
-        estimated_win = UDP_RFTP_MAX(acks_per_pckt, estimated_win);
         acks_per_pckt = 0;
         do{
             ++acks_per_pckt;
+            estimated_win = UDP_RFTP_MAX(acks_per_pckt, estimated_win);
 
             recv_progressive_id = (size_t)  strtoul(elm, NULL, 10);
             rel_progressive_id  = (ssize_t) (recv_progressive_id - base_prev_win - 1);

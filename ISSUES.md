@@ -1,8 +1,9 @@
 # Problemi della soluzione proposta
-## Problemi architetturali
-    
 ## Problemi implementativi
 Ad aggiornamento odierno l'applicazione presenta i seguenti problemati implementativi:
-- Il server non è in grado di gestire client successivi al primo [DA INVESTIGARE] Potrebbe in realtà essere che la `list` tende a fallire un paio di volte se il loss rate venisse applicato in ogni scenario possibile
-- Può capitare che la `get` o la `put` (in entrambi i casi l'attore che svolge il ruolo di mittente) porti all'invio di un pacchetto dell'ultima finestra di spedizione con un indice progressivo più alto di quello effettivo [DA INVESTIGARE]
-- Non sono presenti meccanismi di file locking per attori che agiscono sullo stesso file [ANCORA NON IMPLEMENTATO]
+- Gli attori in ricezione non inviano riscontri per l'ultima finestra di ricezione
+- La terminazione dei processi figlio non è correttamente gestita
+- Processi figlio potrebbero rimanere in stato `defunct` anche a seguito del riscontro con `wait` o `waitpid`
+- Gli attori in trasmissione non impostano correttamente i valori dei bufferi dell'ultima finestra di spedizione
+- Non sono presenti meccanismi di file locking per attori che agiscono sullo stesso file
+- Non sono presenti meccanismi di logging per la valutazione dell'efficenza dell'architettura 

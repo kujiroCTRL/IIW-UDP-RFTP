@@ -268,7 +268,7 @@ void UDP_RFTP_send_pckt(int signo){
         perror("errore in sendto");
         exit(1);
     }
-    printf("SENT\t%.100s\n", sendline);
+    // printf("SENT\t%.100s\n", sendline);
     
     return;
 }
@@ -293,7 +293,7 @@ void UDP_RFTP_recv_pckt(void){
         return;
      
     UDP_RFTP_str2msg(recvline, &recv_msg);
-    printf("RECV\t%.100s\n", recvline);
+    // printf("RECV\t%.100s\n", recvline);
     
     #ifdef UDP_RFTP_DYN_TOUT 
     // Nel caso di  timeout il valore di timeout viene incrementato

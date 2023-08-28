@@ -50,10 +50,10 @@ int main(void){
         puts("SERVER RECEIVED PACKET");
         puts(str);
         
-        for(chosen = 0; chosen <= UDP_RFTP_MAXCLIENT && cl_sockfd[chosen] != 0; chosen++);
-
-        if(chosen == UDP_RFTP_MAXCLIENT)
-            wait(NULL);
+        for(chosen = 0; chosen <= UDP_RFTP_MAXCLIENT && cl_sockfd[chosen] != 0; chosen++){
+            int wstatus;
+            waitpid(WAIT_ANY, &wstatus, WNOHANG);
+        }
 
         switch(recv_msg.msg_type){
            case UDP_RFTP_GET :

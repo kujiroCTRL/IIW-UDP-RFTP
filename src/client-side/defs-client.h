@@ -468,8 +468,8 @@ void UDP_RFTP_generate_put(char* fname){
         // dal server
         acks_per_pckt = 0;
         do{
-            estimated_win = UDP_RFTP_MAX(acks_per_pckt, estimated_win);
             ++acks_per_pckt;
+            estimated_win = UDP_RFTP_MAX(acks_per_pckt, estimated_win);
 
             recv_progressive_id = (size_t)  strtoul(elm, NULL, 10);
             rel_progressive_id  = (ssize_t) (recv_progressive_id - base_prev_win - 1);
@@ -561,12 +561,12 @@ void UDP_RFTP_generate_put(char* fname){
                 for(size_t k = 0; k < win; k++){
                     memset(buffs[k], 0, UDP_RFTP_MAXLINE + 1);
                     fread((void*) (buffs[k]), UDP_RFTP_MAXLINE, 1, file);
-
+                    
                     if(ferror(file)){
                         perror("errore in fread");
                         exit(-1);
                     }
-
+                    
                     pckts[k] = buffs[k];
                 }
 
