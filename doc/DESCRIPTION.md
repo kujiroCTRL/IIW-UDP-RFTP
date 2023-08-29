@@ -63,7 +63,7 @@ Il meccanismo con cui l'attore in ricezione comunichi all'attore in spedizione q
 
 A tal scopo a ciascuna porzione del file viene associato un `progressive_id` quindi un identificatore progressivo della porzione correntemente trasmessa
 
-Il `progressive_id` è, rispetto all'insieme delle porzioni del file, un numero assoluto  e non è relativo alla corrente finestra del mittente (il che significa che se il file in questione potesse essere trasmesso in $N$ messaggi, il `progressive_id` potrà variare tra $1$ ed $N$ anche se la finestra di spedizione preveda l'invio simultaneo di $n<N$ messaggi)
+Il `progressive_id` è, rispetto all'insieme delle porzioni del file, un numero assoluto  e non è relativo alla corrente finestra del mittente (il che significa che se il file in questione potesse essere trasmesso in $N$ messaggi, il `progressive_id` potrà variare tra $1$ ed $N$ anche se la finestra di spedizione preveda l'invio simultaneo di $n\lt N$ messaggi)
 
 Un attore in ricezione che riceva una porzione di file dovrà
 - verificare che il `progressive_id` non appartenga ad una porzione precedentemente riscontrata (quindi sia maggiore al `progressive_id` della prima porzione di file nella corrente finestra di ricezione e la relativa porzione non sia stata marcata come ricevuta)
@@ -89,30 +89,30 @@ Nei file `defs.h` vengono definiti i parametri di esecuzione, le variabili di co
 L'insieme dei parametri di esecuzione è costituito da tutte le macro definite nella prima parte di `defs.h` e comprendono
 - l'indirizzo IP e numero di porta di default del server
     ```c
-    UDP_RFTP_SERV_IP
-    UDP_RFTP_SERV_PT
+    #define UDP_RFTP_SERV_IP            ("127.0.0.1")
+    #define UDP_RFTP_SERV_PT            (5193)
     ```
 - i valori base, minimo e massimo per la taglia della finestra di spedizione 
     ```c
-    UDP_RFTP_BASE_SEND_WIN
-    UDP_RFTP_MIN_SEND_WIN
-    UDP_RFTP_MAX_SEND_WIN
+    #define UDP_RFTP_BASE_SEND_WIN      (4)
+    #define UDP_RFTP_MIN_SEND_WIN       (2)
+    #define UDP_RFTP_MAX_SEND_WIN       (256)
     ```
 - la taglia della finestra di ricezione
     ```c
-    UDP_RFTP_BASE_RECV_WIN
+    #define UDP_RFTP_BASE_RECV_WIN      (5)
     ```
 - i valori base, minimo, massimo del timeout così come il connection timeout (in microsecondi)
-```c
-    UDP_RFTP_BASE_TOUT 
-    UDP_RFTP_MIN_TOUT
-    UDP_RFTP_CONN_TOUT
+    ```c
+    #define UDP_RFTP_BASE_TOUT          (500) 
+    #define UDP_RFTP_MIN_TOUT           (10)
+    #define UDP_RFTP_CONN_TOUT          (3000000)
     ```
 - la politica di aggiornamento del timeout
     ```c
-    UDP_RFTP_MULT_TOUT
-    UDP_RFTP_AVRG_TOUT
-    UDP_RFTP_UPDT_TOUT
+    #define UDP_RFTP_MULT_TOUT(t)       (9 * (t) / 8)
+    #define UDP_RFTP_AVRG_TOUT(t, T)    (1 * (t) / 2 + 1 * (T) / 2)
+    #define UDP_RFTP_UPDT_TOUT          ((t) < (T) ? UDP_RFTP_MULT_TOUT(t) : UDP_RFTP_AVRG_TOUT(t, T))
     ```
 
 Le variabili di controllo vengono modificate a tempo d'esecuzione e comprendono
@@ -120,4 +120,3 @@ Le variabili di controllo vengono modificate a tempo d'esecuzione e comprendono
 	- `pckt_count`: il numero totale di pacchetti da trasferire
 	- `akcd_pckts` ed `ackd_wins`: il numero di pacchetti e finestre riscontrati
 	- `win`: l'attuale taglia della finestra di spedizione / ricezione
-	- ``
