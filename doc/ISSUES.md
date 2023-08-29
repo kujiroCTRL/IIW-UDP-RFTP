@@ -36,3 +36,5 @@ Ad aggiornamento odierno l'applicazione presenta i seguenti bug
 
 Ad aggiornamento odierno l'applicazione non presenta le seguenti funzionalità
 - Non sono presenti meccanismi di file locking per attori che agiscono su uno stesso file
+
+Infine seppur funzionale l'implementazione offerta non è ottimizzata, presenta molteplici ridondanze e la maggior parte delle variabili utili al funzionamento sono condensate nei file `defs.h`

@@ -47,10 +47,12 @@ Per la generazione degli eseguibili è necessario:
 	- tutte le richieste di tipo `get` effettuate da un client dovranno essere precedute dal caricamento in [`./src/server-side/server_files`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/server-side/server_files) dei file custoditi dal server
 	- nel caso di richieste `list` in [`./src/server-side/server_files`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/server-side/server_files) verrà creato un file `list.txt` contenente la lista dei file correntemente posseduti dal server
 	
-	Nel caso in cui venga effettuata una richiesta di `get` di un file non posseduto dal server, il server notificherà il client con un codice di errore (consultare[`DESCRIPTION.md`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/doc/DESCRIPTION.md) per ulteriori dettagli)
+	Nel caso in cui venga effettuata una richiesta di `get` di un file non posseduto dal server, il server notificherà il client con un codice di errore (per ulteriori dettagli consultare [`DESCRIPTION.md`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/doc/DESCRIPTION.md))
 5. Per terminare l'applicazione premere `<Ctrl>+C`
 
-Altri parametri di esecuzione come la durata del timeout, la politica di aggiornamento del timeout e molti altri possono essere manualmente modificati dal file `defs.h` nella cartella `./src/client-side` o `./src/server-side` rispettivamente per le applicazioni client e server 
+Altri parametri di esecuzione come la durata del timeout, la politica di aggiornamento del timeout e molti altri possono essere manualmente modificati dal file `defs.h` nella cartella [`./src/client-side`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/client-side) o [`./src/server-side`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/server-side) rispettivamente per le applicazioni client e server 
+
+I file `defs.h` sono correntemente identici ma logicamente distinti: applicando modifiche alla `defs.h` del client non porterà cambiamenti alla `defs.h` del server (e viceversa)
 ## Servizi non previsti
 1. Il sistema non prevede la visualizzazione a schermo dei file scambiati: terminata l'applicazione dovrà essere l'utente ad aprire e visionare il contenuto dei file in questione, per esempio eseguendo
 	```shell

@@ -65,7 +65,7 @@ La consegna del progetto consiste in:
 La relazione contiene:
 - la descrizione dettagliata dell'architettura del sistema e delle scelte progettuali effettuate;
 - la descrizione dell'implementazione;
-- la descrizione delle eventuali limitazizoni riscontrate;
+- la descrizione delle eventuali limitazioni riscontrate;
 - l'indicazione della piattaforma software usata per lo sviluppo ed il testing del sistema;
 - alcuni esempi di funzionamento;
 - valutazione delle prestazioni del protocollo al variare delle probabilità di perdita dei messaggi $p$, e della durata del timeout $T$ (incluso il caso di $T$ adattivo)
