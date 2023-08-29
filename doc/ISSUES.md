@@ -36,4 +36,3 @@ Ad aggiornamento odierno l'applicazione presenta i seguenti bug
 
 Ad aggiornamento odierno l'applicazione non presenta le seguenti funzionalità
 - Non sono presenti meccanismi di file locking per attori che agiscono su uno stesso file
-- Non sono presenti meccanismi di logging per la valutazione dell'efficenza dell'architettura 

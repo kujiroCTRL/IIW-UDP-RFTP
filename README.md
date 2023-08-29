@@ -1,4 +1,4 @@
-# IIW-UDP-RFTP
+# UDP-ReliableFileTransferProtocol per Ingegneria di Internet e Web 2022-2023
 di Lorenzo Casavecchia **< <lnzcsv@gmail.com> >**
 
 ## Presentazione del progetto
@@ -49,6 +49,8 @@ Per la generazione degli eseguibili è necessario:
 	
 	Nel caso in cui venga effettuata una richiesta di `get` di un file non posseduto dal server, il server notificherà il client con un codice di errore (consultare[`DESCRIPTION.md`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/doc/DESCRIPTION.md) per ulteriori dettagli)
 5. Per terminare l'applicazione premere `<Ctrl>+C`
+
+Altri parametri di esecuzione come la durata del timeout, la politica di aggiornamento del timeout e molti altri possono essere manualmente modificati dal file `defs.h` nella cartella `./src/client-side` o `./src/server-side` rispettivamente per le applicazioni client e server 
 ## Servizi non previsti
 1. Il sistema non prevede la visualizzazione a schermo dei file scambiati: terminata l'applicazione dovrà essere l'utente ad aprire e visionare il contenuto dei file in questione, per esempio eseguendo
 	```shell

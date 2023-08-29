@@ -1,6 +1,8 @@
 #include "defs-server.h"
 
 int main(void){
+    logfile = fopen(".serverlog", "w+");
+    fprintf(logfile, "ackd_pckts\tackd_wins\twin\testimated_win\tretrans_count\tacks_per_pckt\tset_timer.it_value.tv_sec\tset_timer.it_value.tv_usec\n");
     char str[UDP_RFTP_MAXPCKT];
     
     srand(time(NULL));

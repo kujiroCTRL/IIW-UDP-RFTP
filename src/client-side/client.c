@@ -1,9 +1,8 @@
 #include "defs-client.h"
 
 int main(void){
-    // L'indirizzo passato per le chiamate di `sendto` e `recvfrom`
-    // sarà, per il client, quello del server
-    // addr = &serv_addr;
+    logfile = fopen(".clientlog", "w+");
+    fprintf(logfile, "ackd_pckts\tackd_wins\twin\testimated_win\tretrans_count\tacks_per_pckt\tset_timer.it_value.tv_sec\tset_timer.it_value.tv_usec\n");
     srand(time(NULL));
 
     chosen = 0;

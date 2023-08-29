@@ -75,6 +75,7 @@ typedef struct {
 
 unsigned int process_type;                                                                
 FILE* file;
+FILE* logfile;
 
 // Variabili per la gestione della ricezione
 // e spedizione di pacchetti
@@ -184,6 +185,7 @@ void UDP_RFTP_stop_watch(int update){
     
     printf("NEW TOUT\t%lds\t%ldus\n", set_timer.it_value.tv_sec, set_timer.it_value.tv_usec);
     #endif
+    
     return;
 }
 
@@ -307,11 +309,14 @@ void UDP_RFTP_recv_pckt(void){
             UDP_RFTP_MAX(set_timer.it_value.tv_usec, UDP_RFTP_MIN_TOUT);
 
         set_timer.it_value.tv_sec   = set_timer.it_value.tv_usec / 1000000;
-        set_timer.it_value.tv_usec  = set_timer.it_value.tv_usec % 1000000;
+        set_timer.it_value.tv_usec  %= 1000000;
         
         printf("NEW TOUT\t%lds\t%ldus\n", set_timer.it_value.tv_sec, set_timer.it_value.tv_usec);
     }
     #endif
+    
+    fprintf(logfile, "%zu\t%zu\t%zu\t%zu\t%zu\t%zu\t%ld\t%ld\n", ackd_pckts, ackd_wins, win, estimated_win, retrans_count, acks_per_pckt, set_timer.it_value.tv_sec, set_timer.it_value.tv_usec);
+    fflush(logfile);
 
     return;
 }
@@ -430,7 +435,7 @@ void UDP_RFTP_retrans_pckts(int signo){
         // È possibile che il mittente rimanga in attesa
         // per una risposta dal ricevente che non arriverà mai
         if(signo == SIGALRM)
-            if((++retrans_count) >= UDP_RFTP_MAXRETRANS){
+            if((++retrans_count) >= win * UDP_RFTP_MAXRETRANS){
                 printf("Receiver may be dead\n");
                 UDP_RFTP_exit(1);
             }
