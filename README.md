@@ -20,7 +20,7 @@ Per la generazione degli eseguibili è necessario:
 1. Cambiare cartella di lavoro ad [`src`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src), per esempio eseguendo
 	```bash
 	cd ./src
- ```
+	```
 2. Eseguire
 	- `make client` o `make clientd` per la compilazione dell'applicazione client
 	- `make server` o `make serverd` per la compilazione dell'applicazione server
@@ -60,6 +60,5 @@ Per la generazione degli eseguibili è necessario:
 	```
 	rispettivamente per client e server
 2. Il sistema inoltre non preve la creazione o il caricamento di file da tastiera a tempo di esecuzione: il caricamento dei file in `server_files` deve essere effettuata prima dell'avvio dell'applicazione per esempio copiando un file da un altra cartella
-	
 3. Il sistema non prevede il rimpiazzo dei file originali con le loro copie grezze tantomeno l'eliminazione automatica di file vuoti (possibile risultato di un'istruzione `list`, `get` o `put` fallita)
 4. Infine il sistema non prevede il trasferimento di file arbitrariamente grandi e la taglia massima consentiva è sull'ordine dei mega byte (per maggiori dettagli consultare [`DESCRIPTION.md`](https://github.com/kujiroCTRL/doc/DESCRIPTION.md))
