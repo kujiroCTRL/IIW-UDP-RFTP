@@ -53,6 +53,14 @@ Per la generazione degli eseguibili è necessario:
 Altri parametri di esecuzione come la durata del timeout, la politica di aggiornamento del timeout e molti altri possono essere manualmente modificati dal file `defs.h` nella cartella [`./src/client-side`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/client-side) o [`./src/server-side`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/server-side) rispettivamente per le applicazioni client e server 
 
 I file `defs.h` sono correntemente identici ma logicamente distinti: applicando modifiche alla `defs.h` del client non porterà cambiamenti alla `defs.h` del server (e viceversa)
+## Sistema
+L'applicazione è stata sviluppata e provata su un HP Notebook:
+- sistema operativo `Xubuntu 22.04.2 LTS x86_6`
+- processore `AMD A8-7410 APU with AMD Radeon R5 Graphics (4) @ 2.200GHz`
+- compilatore `gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0`
+- debugger `GNU gdb (Ubuntu 12.1-0ubuntu1~22.04) 12.1`
+- memory error detector `valgrind-3.18.1`
+- content tracker `git version 2.34.1`
 ## Servizi non previsti
 1. Il sistema non prevede la visualizzazione a schermo dei file scambiati: terminata l'applicazione dovrà essere l'utente ad aprire e visionare il contenuto dei file in questione, per esempio eseguendo
 	```shell

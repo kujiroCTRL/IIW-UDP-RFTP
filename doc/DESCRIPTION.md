@@ -1,3 +1,4 @@
+
 # Descrizione della soluzione proposta
 di Lorenzo Casavecchia **< <lnzcsv@gmail.com> >**
 ## I file
@@ -48,8 +49,8 @@ Le variabili di controllo vengono modificate a tempo d'esecuzione e comprendono
 - altro
 	- `rev_progressive_id` e `rel_progressive_id`: gli identificatori progressivi dell'ultimo messaggio (assoluto e relativo alla finestra)
 	- `acks_per_pckt`: il numero di porzioni riscontrate nell'ultimo pacchetto
-### I file `defs-client.h`, `defs-server.h`, `client.c` e `server.c` [OK]
-`defs-client.h` e `defs-server.h` contengono le funzioni
+### I file [`defs-client.h`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/client-side/defs-client.h), [`defs-server.h`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/server-side/defs-server.h), [`client.c`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/client-side/client.c) e [`server.c`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/server-side/server.c)
+[`defs-client.h`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/client-side/defs-client.h)e [`defs-server.h`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/server-side/defs-server.h) contengono le funzioni
 ```c
 void UDP_RFTP_generate_recv(char* fname);
 void UDP_RFTP_generate_put(char* fname);
@@ -58,12 +59,12 @@ void UDP_RFTP_handle_recv(char* fname);
 ```
 responsabili della creazione dei processi e della socket con cui verrà gestita la ricezione o spedizione di un file (o lista)
 
-Le funzioni `generate` vengono usate dal client mentre le funzioni `handle` dal server anche se la logica è piuttosto simile (un server che gestisca una richiesta `put` si comporterà in modo analogo ad un client che richieda una `get` e viceversa)
+Le funzioni `generate` vengono usate dal client mentre le funzioni `handle` dal server anche se la logica è piuttosto simile (un server che gestisca una richiesta `put` si comporterà in modo analogo ad un client che gestisca una `get` e viceversa)
 
 Di fatto la differenza sostanziale tra `UDP_RFTP_generate_recv` e `UDP_RFTP_handle_put` (similmente tra le altre due) è la gestione della connessione, quindi la sequenza di messaggi trasmessi per garantire uno stato di connessione tra client e server
 
-`client.c` e `server.c` contengono le funzioni main rispettivamente del client e del server, quindi il codice eseguito dal processo padre all'esecuzione dell'applicazione 
-## Messaggi [OK]
+[`client.c`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/client-side/client.c) e [`server.c`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/server-side/server.c) contengono le funzioni main rispettivamente del client e del server, quindi il codice eseguito dal processo padre all'esecuzione dell'applicazione
+## Messaggi 
 L'interazione tra client e server avviene tramite lo scambio di datagrammi UDP il cui campo dati è una sequenza di caratteri separate da punti e virgola `;`
 
 Le stringhe così delimitate costituiscono i campi del messaggio
@@ -88,7 +89,7 @@ dove `UDP_RFTP_send_pckt` converte la struttura `send_msg` nella sequenza di car
 
 La verifica dell'indirizzo e il numero di porta del mittente alla ricezione di un pacchetto viene gestita all'esterno di `UDP_RFTP_recv_pckt` confrontandoli con i valori delle strutture `client_addr` e `server_addr` definiti all'inizializzazione della connessione
 ## Interazione client-server
-### Messaggio di connessione [OK]
+### Messaggio di connessione 
 Le operazioni di `list`, `get` e `put` vengono generate dal client che, ricevuto il comando dall'utente, genera ed inoltra al server un messaggio di connessione
 
 Un messaggio di connessione è un messaggio generato solamente dal client con
@@ -100,7 +101,7 @@ Un messaggio di connessione è un messaggio generato solamente dal client con
 	- il nome del file ed il numero di messaggi che il server dovrà ricevere per richieste `put`
 
 Inviato un messaggio di connessione il client rimarrà in attesa di una risposta dal server oppure, allo scadere di un timeout impostato prima dell'invio, reinviare la richiesta al server (attualmente pari al timeout base impostato su tutti i pacchetti)
-### Risposta alla connessione [OK]
+### Risposta alla connessione 
 Ricevuta la richiesta di connessione dal client il server dovrà
 - creare un processo figlio per la gestione della richiesta
 - generare una socket associata a quella richiesta
@@ -117,7 +118,7 @@ Per evitare che un client invii un messaggio di connessione senza portarla avant
 Nel caso in cui il figlio dovesse ricevere una risposta la comunicazione verrà portata avanti, altrimenti il processo figlio terminerà
 
 È importante osservare che per ogni richiesta di un client il server generi una sola risposta quindi se quest'ultima non dovesse raggiungere il client, sarà quest ultimo a dover generare una nuova richiesta (mentre il server si limiterà a terminare l'esecuzione del processo generato)
-### Riscontri selettivi [OK]
+### Riscontri selettivi
 Il meccanismo con cui l'attore in ricezione comunichi all'attore in spedizione quali porzioni del file siano state correttamente ricevute è simile al selective repeat: l'attore in ricezione instaura una finestra dei pacchetti ordinati non ancora ricevuti e un buffer della stessa dimensione in cui verranno, di ricezione in ricezione, caricate le porzioni
 
 A tal scopo a ciascuna porzione del file viene associato un `progressive_id` quindi un identificatore progressivo della porzione correntemente trasmessa
@@ -166,14 +167,18 @@ che avviano e interrompono un timer nei momenti sopra descritti
 
 Se `update == UDP_RFTP_SET_WATCH` allora l'intervallo misurato verrà applicato alla legge di controllo di aggiornamento dei timeout ed impostato come prossimo timeout
 
-La legge di controllo prevede incrementi moltiplicati in timeout e una media pesata del timeout precedente e il ritardo misurato
+La legge di controllo prevede incrementi moltiplicati in timeout e una media pesata del timeout precedente e il ritardo misurato, ma comunque entro `UDP_RFTP_MIN_TOUT` e `UDP_RFTP_MAX_TOUT`
+
 $$ {\tt tout}_{k+1}=\left\{\begin{matrix}q\cdot {\tt tout}_k&\text{se timeout}\\\alpha\cdot{\tt tout}_k+(1-\alpha)\cdot{\tt rtt}_k&\text{altrimenti}\end{matrix}\right. $$
+
 dove $q>1$ ed $\alpha<1$ (da corrente implementazione $q=1.125$, $\alpha=0.5$) 
 
 La ritrasmissione prevede l'invio di tutte le porzioni di file correntemente non riscontrate comprese nell'attuale finestra
 
 La finestra di ricezione ha taglia fissa mentre quella di spedizione varia entro `UDP_RFTP_MIN_SEND_WIN` e `UDP_RFTP_MAX_SEND_WIN` secondo la legge di controllo
+
 $$ {\tt win}_{k+1} = \frac{{\tt estimated\_win}_k}{1 + \frac{{\tt retrans\_count}_k}{{\tt estimated\_win}_k}} $$
+
 con
 - `win` la taglia della $k$-esima finestra
 - `estimated_win` la stimata taglia della finestra dell'altro attore (misurata sul numero massimo di ACK per pacchetto ricevuti)
@@ -188,7 +193,7 @@ In tal senso l'incremento della finestra avviene solo
 - qualora l'attore in ricezione invii un riscontro che comprenda più pacchetti
 
 Qualora l'architettura dovesse prevedere finestre di ricezioni variabili la legge di controllo proposta proverebbe a dimensionare le taglie delle finestre allo stesso modo
-### Chiusura della connessione [OK]
+### Chiusura della connessione 
 Un attore che abbia ricevuto tutte le porzioni o tutti i riscontri alle porzioni del file avvierà la sequenza di chiusura alla connessione
 
 La chiusura alla connessione avviene semplicemente inviando dei messaggi con `msg_type` pari a quello del servizio e `progressive_id` negativo e attendendo la stessa risposta dal server
@@ -200,3 +205,4 @@ Qualora l'altro attore non dovesse rispondere al messaggio entro un timeout (e d
 Nel caso in cui un attore dovesse terminare prima di quanto atteso (crash, errore o perché ha ricevuto le porzioni a cui era interessato) è previsto un meccanismo di terminazione per inattività:
 - per attori in ricezione la variabile `retrans_count` tiene conto del numero di mancate ricezioni (`msg_type == 0` dalla `UDP_RFTP_recv_pckt`) e termina l'esecuzione dell'attore qualora `retrans_count >= win * UDP_RFTP_MAXRETRANS` dove `win` è la corrente taglia della finestra
 - per attori in spedizione `retrans_count` conta il numero di porzioni ritrasmesse a seguito di un timeout (il controllo per la terminazione rimane invariato)
+## Istanze di esecuzione
