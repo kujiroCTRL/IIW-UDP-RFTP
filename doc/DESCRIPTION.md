@@ -172,7 +172,7 @@ Se `update == UDP_RFTP_SET_WATCH` allora l'intervallo misurato verrà applicato 
 
 La legge di controllo prevede incrementi moltiplicati in timeout e una media pesata tra il timeout precedente e il ritardo misurato, ma comunque entro `UDP_RFTP_MIN_TOUT` e `UDP_RFTP_MAX_TOUT`
 
-$$ {\tt tout}_{k+1}=\begin{cases}q\cdot {\tt tout}_k&\text{se timeout}\\a\cdot{\tt tout}_k+(1-a)\cdot{\tt rtt}_k&\text{altrimenti}\end{cases}$$
+$$ {\tt tout}_{k+1}=\begin{cases}q\cdot {\tt tout}_k&\text{se timeout}\\ a\cdot{\tt tout}_k+(1-a)\cdot{\tt rtt}_k&\text{altrimenti}\end{cases}$$
 
 dove $q>1$ ed $a<1$ (da corrente implementazione $q=1.125$, $a=0.5$) 
 
@@ -182,7 +182,7 @@ La ritrasmissione prevede l'invio di tutte le porzioni di file correntemente non
 
 La finestra di ricezione ha taglia fissa mentre quella di spedizione varia entro `UDP_RFTP_MIN_SEND_WIN` e `UDP_RFTP_MAX_SEND_WIN` secondo la legge di controllo
 
-$$ {\tt win}_{k+1} = \frac{{\tt estimated\_win}_k}{1 + \frac{{\tt retrans\_count}_k}{{\tt estimated\_win}_k}} $$
+$$ {\tt win}_{k+1} = \frac{{\tt estimated\textunderscore win}_k}{1 + \frac{{\tt retrans\textunderscore count}_k}{{\tt estimated\textunderscore win}_k}} $$
 
 con
 - `win` la taglia della $k$-esima finestra
