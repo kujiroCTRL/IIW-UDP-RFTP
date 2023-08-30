@@ -1,5 +1,6 @@
 # Descrizione della soluzione proposta
 di Lorenzo Casavecchia **< <lnzcsv@gmail.com> >**
+
 ## I file
 ### L'header `defs.h`
 Nei file `defs.h` vengono definiti i parametri di esecuzione, le variabili di controllo e le funzioni comuni al client e server per la gestione del trasferimento dei file
@@ -238,4 +239,4 @@ Ciascun file è stato nominato in base alla convenzione
 <attore>-<tipo di richiesta>-loss<percentuale di perdita>-<parametro>
 ```
 
-Per tutte le simulazioni sono stati utilizzati i parametri impostati nella versione corrente di questo archivio, eccezione fatta per le simulazioni con tasso di perdita `20` e `50` per cui è stata disattivata la terminazione per inattività
+Per tutte le simulazioni sono stati utilizzati i parametri impostati nella versione corrente di questo archivio, eccezione fatta per le simulazioni con tasso di perdita `20` e `70` per cui è stata disattivata la terminazione per inattività
