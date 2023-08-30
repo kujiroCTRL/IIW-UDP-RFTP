@@ -34,7 +34,7 @@
 #define UDP_RFTP_ERR                (60)
 
 // La finestra di ricezione ha taglia fissa
-#define UDP_RFTP_MAX_RECV_WIN       (5)
+#define UDP_RFTP_MAX_RECV_WIN       (32)
 
 // La finestra di spedizione può variare
 // entro un valore minimo e massimo entrambi
@@ -262,8 +262,8 @@ void UDP_RFTP_send_pckt(int signo){
     if(rand() % 100 >= UDP_RFTP_LOSS_RATE)
         n = sendto(sock_fd, sendline, UDP_RFTP_MAXPCKT, 0, (struct sockaddr*) &addr, len);
     else {
-        printf("Lost packet!\n");
-        fflush(stdout); 
+        // printf("Lost packet!\n");
+        // fflush(stdout); 
     }
     
     if(n < 0 && errno != EINTR) {
