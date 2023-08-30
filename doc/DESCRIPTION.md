@@ -131,6 +131,8 @@ A tal scopo a ciascuna porzione del file viene associato un `progressive_id` qui
 
 Il `progressive_id` è, rispetto all'insieme delle porzioni del file, un numero assoluto  e non è relativo alla corrente finestra del mittente (il che significa che se il file in questione potesse essere trasmesso in $N$ messaggi, il `progressive_id` potrà variare tra $1$ ed $N$ anche se la finestra di spedizione preveda l'invio simultaneo di $n\lt N$ messaggi)
 
+Il `progressive_id` di una porzione in trasmissione coincide con il `progressive_id` del messaggio contenente quella porzione di file 
+
 Questa scelta introduce un limite massimo al valore di `progressive_id`: supponendo `progressive_id` venga rappresentato come `uintx_t` quindi un numero intero senza segno a `x` bit allora il suo valore massimo sarà $2^{\tt x}-1$
 
 Se `x == 16` (come da implementazione attuale) `progressive_id` potrà valere al più $2^{16}-1\approx 64k$, quindi potranno essere trasmessi al più $64k$ messaggi (un messaggio racchiude una porzione di file di $1k$ byte per un totale di circa $64M$ byte)
@@ -143,7 +145,7 @@ Un attore in ricezione che riceva una porzione di file dovrà
 Il riscontro è un messaggio con
 - `msg_type` del tipo di richiesta
 - `progressive_id` pari a `-1`
-- `data` contenente una lista degli indici progressivi dei pacchetti riscontrati della finestra corrente separati da `,`
+- `data` contenente una lista degli identificatori progressivi dei pacchetti riscontrati della finestra corrente separati da `,`
 
 Il riscontro verrà inviato
 - allo scadere del timeout di ricezione
@@ -230,7 +232,10 @@ Le colonne sono così disposte
 ```gnuplot
 ackd_pckts  ackd_wins   win estimated_win   retrans_count   acks_per_pckt   set_timer.it_value.tv_sec   set_timer.it_value.tv_usec
 ```
-dove `set_timer` è il timer del timeout
+dove `set_timer` è il timer del timeout, mentre il comando base utilizzato per generare i grafici è
+```gnuplot
+plot <nome del file> using <numero della colonna>
+```
 
 Nella cartella [`doc/plots`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/doc/plots) sono presenti grafici generati a partire da alcune istanze di esecuzione del sistema
 
@@ -241,16 +246,31 @@ Ciascun file è stato nominato in base alla convenzione
 
 Per tutte le simulazioni sono stati utilizzati i parametri impostati nella versione corrente di questo archivio, eccezione fatta per le simulazioni con tasso di perdita `20` e `70` per cui è stata disattivata la terminazione per inattività
 
-Il file trasmesso in get è di
+Inoltre il grafico del `retrans_count` di `clientd` della `get` (`UDP_RFTP_LOSS_RATE == 20`) è in scala logaritmica
 
-get (UDP_RFTP_LOSS_RATE == 0)|ackd_pckts|retrans_count|win|set_timer
+Il file trasmesso in `get` è circa di $3.7M$ byte mentre il file in `put` è di $130k$ byte
+
+Per una corretta visualizzazione dei grafici consultare [`LorenzoCasavecchiaIIW22-23.pdf`](https://github.com/kujiroCTR/tree/main/doc/LorenzoCasavecchiaIIW22-23.pdf), aprire i grafici in [`doc/plots`](https://github.com/kujiroCTR/tree/main/doc/plots) oppure aprire questo file in `Obsidian (v1.3.7)`
+
+`get` (`UDP_RFTP_LOSS_RATE == 0`)|`ackd_pckts`|`retrans_count`|`win`|`set_timer`
 :---:|:---:|:---:|:---:|:---:
-client|![[client-get-loss0-ackd_pckts.png]]|![[client-get-loss0-retrans_count.png]]||
-server|![[server-get-loss0-ackd_pckts.png]]|![[server-get-loss0-retrans_count.png]]|![[server-get-loss0-win.png]]|
-clientd|![[clientd-get-loss0-ackd_pckts.png]]|![[clientd-get-loss0-retrans_count.png]]||![[clientd-get-loss0-set_timer.png]]
-serverd|![[serverd-get-loss0-ackd_pckts.png]]|![[serverd-get-loss0-retrans_count.png]]|![[serverd-get-loss0-win.png]]||
+`client`|![[client-get-loss0-ackd_pckts.png]]|![[client-get-loss0-retrans_count.png]]||
+`server`|![[server-get-loss0-ackd_pckts.png]]|![[server-get-loss0-retrans_count.png]]|![[server-get-loss0-win.png]]|
+`clientd`|![[clientd-get-loss0-ackd_pckts.png]]|![[clientd-get-loss0-retrans_count.png]]||![[clientd-get-loss0-set_timer.png]]
+`serverd`|![[serverd-get-loss0-ackd_pckts.png]]|![[serverd-get-loss0-retrans_count.png]]|![[serverd-get-loss0-win.png]]||
 
-put (UDP_RFTP_LOSS_RATE == 0)|ackd_pckts|retrans_count|win
+`put` (`UDP_RFTP_LOSS_RATE == 0`)|`ackd_pckts`|`retrans_count`|`win`
 :---:|:---:|:---:|:---:
-client|![[client-put-loss0-ackd_pckts.png]]|![[client-put-loss0-retrans_count.png]]|![[client-put-loss0-win.png]]
-server|![[server-put-loss0-ackd_pckts.png]]|![[server-put-loss0-retrans_count.png]]|
+`client`|![[client-put-loss0-ackd_pckts.png]]|![[client-put-loss0-retrans_count.png]]|![[client-put-loss0-win.png]]
+`server`|![[server-put-loss0-ackd_pckts.png]]|![[server-put-loss0-retrans_count.png]]|
+
+`get` (`UDP_RFTP_LOSS_RATE == 20`)|`ackd_pckts`|`retrans_count`|`win`|`set_timer`
+:---:|:---:|:---:|:---:|:---:
+`clientd`|![[clientd-get-loss20-ackd_pckts.png]]|![[clientd-get-loss20-retrans_count-log.png]]||![[clientd-get-loss20-set_timer.png]]
+`serverd`|![[serverd-get-loss20-ackd_pckts.png]]|![[serverd-get-loss20-retrans_count.png]]|![[serverd-get-loss20-win.png]]|
+
+`get` (`UDP_RFTP_LOSS_RATE == 70`)|`ackd_pckts`|`retrans_count`|`win`|`set_timer`
+:---:|:---:|:---:|:---:|:---:
+`clientd`|![[clientd-get-loss70-ackd_pckts.png]]|![[clientd-get-loss70-retrans_count.png]]||![[clientd-get-loss70-set_timer.png]]
+`serverd`|![[serverd-get-loss70-ackd_pckts.png]]|![[serverd-get-loss70-retrans_count.png]]|![[serverd-get-loss70-win.png]]|
+

@@ -1,0 +1,4 @@
+list.txt
+my.txt
+my.txt.dup
+test.txt

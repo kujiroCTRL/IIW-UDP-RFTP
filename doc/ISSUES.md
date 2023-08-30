@@ -27,6 +27,8 @@ di Lorenzo Casavecchia **< <lnzcsv@gmail.com> >**
 	- uno in ricezione delle richieste / risposte verso l'altro attore
 	- uno di gestione delle richieste
 	- uno di trasmissione delle risposte / richieste verso l'altro attore
+3. Come evidenziato dalle istanze di esecuzione in [`DESCRIPTION.md`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/doc/DESCRIPTION.md) le varie parti che compongono il sistema non funzionano bene insieme, specialmente in presenza di timeout dinamici
+	Le istanze di esecuzione hanno inoltre evidenziato che anche in assenza di perdite vi siano ritrasmissioni e il motivo è che la gestione del timeout non è adeguata e presenta bug
 ## Problemi implementativi
 Ad aggiornamento odierno l'applicazione presenta i seguenti bug 
 - Gli attori in ricezione non inviano riscontri per l'ultima finestra di ricezione
