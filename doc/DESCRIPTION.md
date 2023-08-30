@@ -250,7 +250,7 @@ Inoltre il grafico del `retrans_count` di `clientd` della `get` (`UDP_RFTP_LOSS_
 
 Il file trasmesso in `get` è circa di $3.7M$ byte mentre il file in `put` è di $130k$ byte
 
-Per una corretta visualizzazione dei grafici consultare [`LorenzoCasavecchiaIIW22-23.pdf`](https://github.com/kujiroCTR/tree/main/doc/LorenzoCasavecchiaIIW22-23.pdf), aprire i grafici in [`doc/plots`](https://github.com/kujiroCTR/tree/main/doc/plots) oppure aprire questo file in `Obsidian (v1.3.7)`
+Per una corretta visualizzazione dei grafici consultare [`LorenzoCasavecchiaIIW22-23.pdf`](https://github.com/kujiroCTRL/tree/main/doc/LorenzoCasavecchiaIIW22-23.pdf), aprire i grafici in [`doc/plots`](https://github.com/kujiroCTR/tree/main/doc/plots) oppure aprire questo file in `Obsidian (v1.3.7)`
 
 `get` (`UDP_RFTP_LOSS_RATE == 0`)|`ackd_pckts`|`retrans_count`|`win`|`set_timer`
 :---:|:---:|:---:|:---:|:---:
