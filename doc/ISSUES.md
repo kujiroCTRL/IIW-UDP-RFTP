@@ -33,6 +33,7 @@ Ad aggiornamento odierno l'applicazione presenta i seguenti bug
 - Processi figlio tendono a rimanere in stato `defunct` anche a seguito del loro riscontro tramite `wait` o `waitpid`
 - Gli attori in trasmissione non impostano correttamente i valori dei buffer dell'ultima finestra di spedizione (se $N$ fosse il numero di pacchetti che dovrebbero essere trasmessi, l'attore in trasmissione potrebbe inviare pacchetti fino ad $N+1$ dove l'($N+1$)-esimo pacchetto ha campo `data` vuoto)
 - Anche con probabilità di perdita di pacchetti nulla un client potrebbe inviare più volte una stessa richiesta al server prima che quest ultimo abbia modo di rispondergli (ed è sicuramente dovuto dalla gestione dei timeout all'invio della richiesta)
+- Nonostante la politica di aggiornamento del timer sia la stessa del client, si osserva che il timer del server tenda ad assestarsi al valore minimo e a restarci (questo bug credo sia responsabile dei valori terrificanti nel `retrans_count` del client e del server)
 
 Ad aggiornamento odierno l'applicazione non presenta le seguenti funzionalità
 - Non sono presenti meccanismi di file locking per attori che agiscono su uno stesso file

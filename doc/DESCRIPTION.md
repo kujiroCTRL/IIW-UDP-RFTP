@@ -7,30 +7,30 @@ Nei file `defs.h` vengono definiti i parametri di esecuzione, le variabili di co
 L'insieme dei parametri di esecuzione è costituito da tutte le macro definite nella prima parte di `defs.h` e comprendono
 - l'indirizzo IP e numero di porta di default del server
     ```c
-    #define UDP_RFTP_SERV_IP            ("127.0.0.1")
-    #define UDP_RFTP_SERV_PT            (5193)
+    #define UDP_RFTP_SERV_IP
+    #define UDP_RFTP_SERV_PT
     ```
 - i valori base, minimo e massimo per la taglia della finestra di spedizione 
     ```c
-    #define UDP_RFTP_BASE_SEND_WIN      (4)
-    #define UDP_RFTP_MIN_SEND_WIN       (2)
-    #define UDP_RFTP_MAX_SEND_WIN       (256)
+    #define UDP_RFTP_BASE_SEND_WIN
+    #define UDP_RFTP_MIN_SEND_WIN
+    #define UDP_RFTP_MAX_SEND_WIN
     ```
 - la taglia della finestra di ricezione
     ```c
-    #define UDP_RFTP_BASE_RECV_WIN      (5)
+    #define UDP_RFTP_MAX_RECV_WIN
     ```
 - i valori base, minimo, massimo del timeout così come il connection timeout (in microsecondi)
     ```c
-    #define UDP_RFTP_BASE_TOUT          (500) 
-    #define UDP_RFTP_MIN_TOUT           (10)
-    #define UDP_RFTP_CONN_TOUT          (3000000)
+    #define UDP_RFTP_BASE_TOUT 
+    #define UDP_RFTP_MIN_TOUT
+    #define UDP_RFTP_CONN_TOUT
     ```
 - la politica di aggiornamento del timeout
     ```c
     #define UDP_RFTP_MULT_TOUT(t)       (9 * (t) / 8)
     #define UDP_RFTP_AVRG_TOUT(t, T)    (1 * (t) / 2 + 1 * (T) / 2)
-    #define UDP_RFTP_UPDT_TOUT(t, T)    ((t) < (T) ? UDP_RFTP_MULT_TOUT(t) : UDP_RFTP_AVRG_TOUT(t, T))
+    #define UDP_RFTP_UPDT_TOUT(t, T)    (UDP_RFTP_AVRG_TOUT(t, T))
     ```
 
 Le variabili di controllo vengono modificate a tempo d'esecuzione e comprendono
@@ -139,6 +139,11 @@ Un attore in ricezione che riceva una porzione di file dovrà
 - verificare che il `progressive_id` non appartenga ad una porzione della finestra di ricezione successiva a quella attuale (`progressive_id` dovrà essere minore o uguale al `progressive_id` dell'ultima porzione della finestra)
 - inviare un riscontro positivo (ACK) delle porzioni correttamente ricevute dell'attuale finestra
 
+Il riscontro è un messaggio con
+- `msg_type` del tipo di richiesta
+- `progressive_id` pari a `-1`
+- `data` contenente una lista degli indici progressivi dei pacchetti riscontrati della finestra corrente separati da `,`
+
 Il riscontro verrà inviato
 - allo scadere del timeout di ricezione
 - nel caso di `progressive_id` di porzioni di finestre precedenti 
@@ -170,9 +175,9 @@ che avviano e interrompono un timer nei momenti sopra descritti
 
 Se `update == UDP_RFTP_SET_WATCH` allora l'intervallo misurato verrà applicato alla legge di controllo di aggiornamento dei timeout ed impostato come prossimo timeout, altrimenti verranno resettate le variabili che misuravano il tempo passato
 
-La legge di controllo prevede incrementi moltiplicati in timeout e una media pesata tra il timeout precedente e il ritardo misurato, ma comunque entro `UDP_RFTP_MIN_TOUT` e `UDP_RFTP_MAX_TOUT`
+La legge di controllo prevede incrementi moltiplicati in timeout e una media pesata tra il timeout precedente e il ritardo misurato, ma comunque entro `UDP_RFTP_MIN_TOUT` e `UDP_RFTP_BASE_TOUT`
 
-$$ {\tt tout}_{k+1}=\begin{cases}q\cdot {\tt tout}_k&\text{se timeout}\\ a\cdot{\tt tout}_k+(1-a)\cdot{\tt rtt}_k&\text{altrimenti}\end{cases}$$
+$$ {\tt tout}_{k+1}=\begin{cases}q\cdot {\tt tout}_k&\text{se timeout}\\\ a\cdot{\tt tout}_k+(1-a)\cdot{\tt rtt}_k&\text{altrimenti}\end{cases}$$
 
 dove $q>1$ ed $a<1$ (da corrente implementazione $q=1.125$, $a=0.5$) 
 
@@ -214,3 +219,23 @@ Nel caso in cui un attore dovesse terminare prima di quanto atteso (crash, error
 - per attori in ricezione la variabile `retrans_count` tiene conto del numero di mancate ricezioni (`msg_type == 0` dalla `UDP_RFTP_recv_pckt`) e termina l'esecuzione dell'attore qualora `retrans_count >= win * UDP_RFTP_MAXRETRANS` dove `win` è la corrente taglia della finestra
 - per attori in spedizione `retrans_count` conta il numero di porzioni ritrasmesse a seguito di un timeout (il controllo per la terminazione rimane invariato)
 ## Istanze di esecuzione
+Per illustrare l'evoluzione nel tempo dei parametri del sistema all'invocazione di `UDP_RFTP_pckt` corrisponderà anche un'operazione di stampa su file
+
+L'ultimo client eseguito stamperà per colonne i valori dei suoi parametri in [`.clientlog`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/.clientlog) mentre il server su [`.serverlog`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/.serverlog)
+
+I valori in [`.clientlog`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/.clientlog) e [`.serverlog`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/src/.serverlog)  possono essere passati a `gnuplot` che, specificate le colonne interessate, stamperà un grafico nel tempo del loro andamento
+
+Le colonne sono così disposte
+```gnuplot
+ackd_pckts  ackd_wins   win estimated_win   retrans_count   acks_per_pckt   set_timer.it_value.tv_sec   set_timer.it_value.tv_usec
+```
+dove `set_timer` è il timer del timeout
+
+Nella cartella [`doc/plots`](https://github.com/kujiroCTRL/IIW-UDP-RFTP/tree/main/doc/plots) sono presenti grafici generati a partire da alcune istanze di esecuzione del sistema
+
+Ciascun file è stato nominato in base alla convenzione
+```shell
+<attore>-<tipo di richiesta>-loss<percentuale di perdita>-<parametro>
+```
+
+Per tutte le simulazioni sono stati utilizzati i parametri impostati nella versione corrente di questo archivio, eccezione fatta per le simulazioni con tasso di perdita `20` e `50` per cui è stata disattivata la terminazione per inattività
