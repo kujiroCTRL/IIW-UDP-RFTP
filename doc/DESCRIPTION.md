@@ -240,3 +240,17 @@ Ciascun file è stato nominato in base alla convenzione
 ```
 
 Per tutte le simulazioni sono stati utilizzati i parametri impostati nella versione corrente di questo archivio, eccezione fatta per le simulazioni con tasso di perdita `20` e `70` per cui è stata disattivata la terminazione per inattività
+
+Il file trasmesso in get è di
+
+get (UDP_RFTP_LOSS_RATE == 0)|ackd_pckts|retrans_count|win|set_timer
+:---:|:---:|:---:|:---:|:---:
+client|![[client-get-loss0-ackd_pckts.png]]|![[client-get-loss0-retrans_count.png]]||
+server|![[server-get-loss0-ackd_pckts.png]]|![[server-get-loss0-retrans_count.png]]|![[server-get-loss0-win.png]]|
+clientd|![[clientd-get-loss0-ackd_pckts.png]]|![[clientd-get-loss0-retrans_count.png]]||![[clientd-get-loss0-set_timer.png]]
+serverd|![[serverd-get-loss0-ackd_pckts.png]]|![[serverd-get-loss0-retrans_count.png]]|![[serverd-get-loss0-win.png]]||
+
+put (UDP_RFTP_LOSS_RATE == 0)|ackd_pckts|retrans_count|win
+:---:|:---:|:---:|:---:
+client|![[client-put-loss0-ackd_pckts.png]]|![[client-put-loss0-retrans_count.png]]|![[client-put-loss0-win.png]]
+server|![[server-put-loss0-ackd_pckts.png]]|![[server-put-loss0-retrans_count.png]]|
