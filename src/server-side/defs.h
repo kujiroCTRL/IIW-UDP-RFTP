@@ -59,7 +59,7 @@
 #define UDP_RFTP_UPDT_TOUT(t, T)    (UDP_RFTP_AVRG_TOUT(t, T))
 
 #define UDP_RFTP_SET_WATCH          (1)
-#define UDP_RFTP_LOSS_RATE          (70)
+#define UDP_RFTP_LOSS_RATE          (0)
 
 #define UDP_RFTP_MIN(x, y)          ((x) < (y) ? (x) : (y))
 #define UDP_RFTP_MAX(x, y)          ((x) > (y) ? (x) : (y))
@@ -398,8 +398,8 @@ void UDP_RFTP_send_ack(int signo){
             // per una risposta dal mittente che non arriverà mai
             if(signo == SIGALRM)
                 if((++retrans_count) >= win * UDP_RFTP_MAXRETRANS){
-                    // printf("Sender may be dead\n");
-                    // UDP_RFTP_exit(1);
+                    printf("Sender may be dead\n");
+                    UDP_RFTP_exit(1);
                 }
         }
     }
@@ -436,8 +436,8 @@ void UDP_RFTP_retrans_pckts(int signo){
         // per una risposta dal ricevente che non arriverà mai
         if(signo == SIGALRM)
             if((++retrans_count) >= win * UDP_RFTP_MAXRETRANS){
-                // printf("Receiver may be dead\n");
-                // UDP_RFTP_exit(1);
+                printf("Receiver may be dead\n");
+                UDP_RFTP_exit(1);
             }
         
         send_msg.progressive_id  = k + base_prev_win + 1; // k + win * ackd_wins + 1;
