@@ -167,13 +167,13 @@ che avviano e interrompono un timer nei momenti sopra descritti
 Se `update == UDP_RFTP_SET_WATCH` allora l'intervallo misurato verrà applicato alla legge di controllo di aggiornamento dei timeout ed impostato come prossimo timeout
 
 La legge di controllo prevede incrementi moltiplicati in timeout e una media pesata del timeout precedente e il ritardo misurato
-$$ {\tt tout}_{k+1}=\begin{cases}q\cdot {\tt tout}_k&\text{se timeout}\\\alpha\cdot{\tt tout}_k+(1-\alpha)\cdot{\tt rtt}_k&\text{altrimenti}\end{cases} $$
+$$ {\tt tout}_{k+1}=\left\{\begin{matrix}q\cdot {\tt tout}_k&\text{se timeout}\\\alpha\cdot{\tt tout}_k+(1-\alpha)\cdot{\tt rtt}_k&\text{altrimenti}\end{matrix}\right. $$
 dove $q>1$ ed $\alpha<1$ (da corrente implementazione $q=1.125$, $\alpha=0.5$) 
 
 La ritrasmissione prevede l'invio di tutte le porzioni di file correntemente non riscontrate comprese nell'attuale finestra
 
 La finestra di ricezione ha taglia fissa mentre quella di spedizione varia entro `UDP_RFTP_MIN_SEND_WIN` e `UDP_RFTP_MAX_SEND_WIN` secondo la legge di controllo
-$$ \tt{win}_{k+1} = \frac{\tt{estimated\_win}_k}{1 + \frac{\tt{retrans\_count}_k}{\tt{estimated\_win}_k}} $$
+$$ {\tt win}_{k+1} = \frac{{\tt estimated\_win}_k}{1 + \frac{{\tt retrans\_count}_k}{{\tt estimated\_win}_k}} $$
 con
 - `win` la taglia della $k$-esima finestra
 - `estimated_win` la stimata taglia della finestra dell'altro attore (misurata sul numero massimo di ACK per pacchetto ricevuti)
