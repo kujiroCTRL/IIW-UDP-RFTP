@@ -56,7 +56,7 @@
 // macro `MULT_TOUT` e `AVRG_TOUT`
 #define UDP_RFTP_MULT_TOUT(t)       (9 * (t) / 8)
 #define UDP_RFTP_AVRG_TOUT(t, T)    (1 * (t) / 2 + 1 * (T) / 2)
-#define UDP_RFTP_UPDT_TOUT(t, T)    ((t) < (T) ? UDP_RFTP_MULT_TOUT(t) : UDP_RFTP_AVRG_TOUT(t, T))
+#define UDP_RFTP_UPDT_TOUT(t, T)    (UDP_RFTP_AVRG_TOUT(t, T))
 
 #define UDP_RFTP_SET_WATCH          (1)
 #define UDP_RFTP_LOSS_RATE          (0)

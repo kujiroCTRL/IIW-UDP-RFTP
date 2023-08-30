@@ -47,7 +47,7 @@ Le variabili di controllo vengono modificate a tempo d'esecuzione e comprendono
 	- `cancel_timer`: interrompere il timer
 - altro
 	- `rev_progressive_id` e `rel_progressive_id`: gli identificatori progressivi dell'ultimo messaggio (assoluto e relativo alla finestra)
-	- `acks_per_pckt`: il numero di porzioni ACK'd nell'ultimo pacchetto
+	- `acks_per_pckt`: il numero di porzioni riscontrate nell'ultimo pacchetto
 ### I file `defs-client.h`, `defs-server.h`, `client.c` e `server.c` [OK]
 `defs-client.h` e `defs-server.h` contengono le funzioni
 ```c
@@ -105,11 +105,12 @@ Ricevuta la richiesta di connessione dal client il server dovrà
 - creare un processo figlio per la gestione della richiesta
 - generare una socket associata a quella richiesta
 - comunicare al client del numero di porta della socket generata
+
 Nel comunicare il numero di porta al client il processo figlio del server dovrà inviare sulla socket generata dal padre (con numero di porta di default) un messaggio che nel campo `port_no` abbia il numero di porta della socket del figlio
 
 In questo modo il client riceverà la risposta alla sua richiesta di connessione dalla socket che aveva originariamente contattato e con una direttiva esplicita a chi contattare d'ora in poi per continuare la comunicazione
 
-Gli altri campi della risposta del server dipendono dal tipo di richiesta effettuata e dal valore del campo dati e verranno discussioni nei paragrafi dedicati ai singoli tipi di richiesta
+Gli altri campi della risposta del server dipendono dal tipo di richiesta effettuata e dal valore del campo dati
 
 Per evitare che un client invii un messaggio di connessione senza portarla avanti, il processo figlio generato rimarrà in attesa non oltre una quantità di tempo specificata dalla connection timeout `UDP_RFTP_CONN_TOUT` (e comunque più grande del valore di timeout base `UDP_RFTP_BASE_TOUT`)
 
@@ -117,17 +118,17 @@ Nel caso in cui il figlio dovesse ricevere una risposta la comunicazione verrà 
 
 È importante osservare che per ogni richiesta di un client il server generi una sola risposta quindi se quest'ultima non dovesse raggiungere il client, sarà quest ultimo a dover generare una nuova richiesta (mentre il server si limiterà a terminare l'esecuzione del processo generato)
 ### Riscontri selettivi [OK]
-Il meccanismo con cui l'attore in ricezione comunichi all'attore in spedizione quali porzioni del file siano state correttamente ricevute è simile al selective repeat: l'attore in ricezione instaura una finestra dei pacchetti ordinati non ancora ricevuti e un buffer della stessa dimensione in cui verranno, di ricezione in ricezione, caricate le porzioni ricevute
+Il meccanismo con cui l'attore in ricezione comunichi all'attore in spedizione quali porzioni del file siano state correttamente ricevute è simile al selective repeat: l'attore in ricezione instaura una finestra dei pacchetti ordinati non ancora ricevuti e un buffer della stessa dimensione in cui verranno, di ricezione in ricezione, caricate le porzioni
 
 A tal scopo a ciascuna porzione del file viene associato un `progressive_id` quindi un identificatore progressivo della porzione correntemente trasmessa
 
 Il `progressive_id` è, rispetto all'insieme delle porzioni del file, un numero assoluto  e non è relativo alla corrente finestra del mittente (il che significa che se il file in questione potesse essere trasmesso in $N$ messaggi, il `progressive_id` potrà variare tra $1$ ed $N$ anche se la finestra di spedizione preveda l'invio simultaneo di $n\lt N$ messaggi)
 
-Questa scelta introduce un limite massimo al valore di `progressive_id`: supponendo `progressive_id` venga rappresentato come `uintx_t` quindi un numero intero senza segno a `x` bit allora il valore massimo di `progressive_id` sarà $2^{\tt x}-1$
+Questa scelta introduce un limite massimo al valore di `progressive_id`: supponendo `progressive_id` venga rappresentato come `uintx_t` quindi un numero intero senza segno a `x` bit allora il suo valore massimo sarà $2^{\tt x}-1$
 
-Se `x == 16` (come da implementazione attuale) `progressive_id` potrà valere al più $2^{16}-1\approx 32k$, quindi potranno essere trasmessi al più $32k$ messaggi (un messaggio racchiude una porzione di file di $1k$ byte per un totale di circa $32M$ byte)
+Se `x == 16` (come da implementazione attuale) `progressive_id` potrà valere al più $2^{16}-1\approx 64k$, quindi potranno essere trasmessi al più $64k$ messaggi (un messaggio racchiude una porzione di file di $1k$ byte per un totale di circa $64M$ byte)
 
-Un modo di rimediare a questa limitazione sarebbe di suddividere logicamente il file in porzioni da $32M$ byte e gestire la trasmissione delle singole porzioni (sequenzialmente o in parallelo)
+Per rimediare a questa limitazione si potrebbe suddividere logicamente il file in porzioni da $64M$ byte e gestire la trasmissione delle singole porzioni (sequenzialmente o in parallelo)
 
 Un attore in ricezione che riceva una porzione di file dovrà
 - verificare che il `progressive_id` non appartenga ad una porzione precedentemente riscontrata (quindi sia maggiore al `progressive_id` della prima porzione di file nella corrente finestra di ricezione e la relativa porzione non sia stata marcata come ricevuta)
@@ -138,7 +139,7 @@ Il riscontro verrà inviato
 - allo scadere del timeout di ricezione
 - nel caso di `progressive_id` di porzioni di finestre precedenti 
 - qualora vengano ricevute tutte le porzioni previste dalla finestra
-ed è pertanto simile al meccanismo degli ACK ritardati implementato in alcune versioni di TCP
+(in tal senso è simile al meccanismo degli ACK ritardati implementato in alcune versioni di TCP)
 
 D'altro canto la finestra di ricezione potrà essere traslata e ammettere nuove porzioni solo al riempimento di quella precedente
 
@@ -146,7 +147,7 @@ In tal senso possiamo dire che il meccanismo di riscontro delle porzioni dei fil
 - di tipo stop and wait nel contesto della finestra di ricezione
 - di tipo selettivo e cumulativo nel contesto delle porzioni della finestra
 
-Questa scelta seppur permetta un'identificazione più segmentata della trasmissione del file, è più debole del classico riscontro selettivo in quanto prevede il traslare della finestra al riscontro delle prime porzioni della finestra 
+Questa scelta seppur permetta un'identificazione più segmentata della trasmissione del file, è più debole del classico riscontro selettivo in quanto non prevede traslare della finestra al riscontro delle prime porzioni della finestra
 ### Ritrasmissione
 La ritrasmissione permette ad un attore in spedizione di inviare porzioni di file non ancora riscontrate a valle di un timeout
 
@@ -166,23 +167,27 @@ che avviano e interrompono un timer nei momenti sopra descritti
 Se `update == UDP_RFTP_SET_WATCH` allora l'intervallo misurato verrà applicato alla legge di controllo di aggiornamento dei timeout ed impostato come prossimo timeout
 
 La legge di controllo prevede incrementi moltiplicati in timeout e una media pesata del timeout precedente e il ritardo misurato
-$$
-{\tt tout}_{k+1}=\begin{cases}q\cdot {\tt tout}_k&\text{se timeout}\\\alpha\cdot{\tt tout}_k+(1-\alpha)\cdot{\tt rtt}_k&\text{altrimenti}\end{cases}
-$$
+$$ {\tt tout}_{k+1}=\begin{cases}q\cdot {\tt tout}_k&\text{se timeout}\\\alpha\cdot{\tt tout}_k+(1-\alpha)\cdot{\tt rtt}_k&\text{altrimenti}\end{cases} $$
 dove $q>1$ ed $\alpha<1$ (da corrente implementazione $q=1.125$, $\alpha=0.5$) 
 
 La ritrasmissione prevede l'invio di tutte le porzioni di file correntemente non riscontrate comprese nell'attuale finestra
 
 La finestra di ricezione ha taglia fissa mentre quella di spedizione varia entro `UDP_RFTP_MIN_SEND_WIN` e `UDP_RFTP_MAX_SEND_WIN` secondo la legge di controllo
-$$
-\tt{win}_{k+1} = \frac{\tt{estimated\_win}_k}{1 + \frac{\tt{retrans\_count}_k}{\tt{estimated\_win}_k}}
-$$
+$$ \tt{win}_{k+1} = \frac{\tt{estimated\_win}_k}{1 + \frac{\tt{retrans\_count}_k}{\tt{estimated\_win}_k}} $$
 con
 - `win` la taglia della $k$-esima finestra
 - `estimated_win` la stimata taglia della finestra dell'altro attore (misurata sul numero massimo di ACK per pacchetto ricevuti)
 - `retrans_count` il numero di ritrasmissioni alla finestra $k$
 
 Notare che `retrans_count == 0` rende `win == estimated_win` (le finestre di ricezione e spedizione si corrispondono), mentre se `retrans_count > estimated_win` allora la rete si considererà congestionata e `win < estimated_win` (decremento moltiplicativo)
+
+Siccome la politica di riscontro delle finestre è stop and wait e la finestra di ricezione è fissa in taglia, l'incremento della finestra di spedizione oltre il valore di `estimated_win` porterà quasi sempre alla ritrasmissione delle porzioni in eccesso (l'unico scenario in cui ciò non accadrà è la ricezione in ordine e senza perdite di tutti i pacchetti)
+
+In tal senso l'incremento della finestra avviene solo
+- a seguito di una riduzione da ritrasmissioni
+- qualora l'attore in ricezione invii un riscontro che comprenda più pacchetti
+
+Qualora l'architettura dovesse prevedere finestre di ricezioni variabili la legge di controllo proposta proverebbe a dimensionare le taglie delle finestre allo stesso modo
 ### Chiusura della connessione [OK]
 Un attore che abbia ricevuto tutte le porzioni o tutti i riscontri alle porzioni del file avvierà la sequenza di chiusura alla connessione
 
